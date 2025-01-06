@@ -66,14 +66,14 @@ class MS1Reaser():
         return self.data
 
 class MS2Reader:
-    def __init__(self, filepath):
-        self.filepath = filepath
+    def __init__(self, file_path):
+        self.file_path = file_path
         self.data = []  # 存储所有质谱数据
         self.metadata = {}  # 存储头信息（元数据）
 
     def read_file(self):
         """读取文件并解析元数据和质谱数据"""
-        with open(self.filepath, 'r') as file:
+        with open(self.file_path, 'r') as file:
             lines = file.readlines()
 
         current_spectrum = None

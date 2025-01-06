@@ -21,12 +21,11 @@ class FastaReader:
                 line = line.strip()
                 if line.startswith('>'):  # 以 '>' 开头的是 FASTA 头部行
                     if current_header:  # 如果已经有一个序列，保存之前的序列
-                        self.sequences[current_header] = self.clean_sequence(''.join(current_sequence))
+                        self.sequences[current_header] = ''.join(current_sequence)
                     current_header = line[1:]  # 去掉 '>'
                     current_sequence = []  # 重置序列
                 else:
                     current_sequence.append(line)  # 收集序列的每一行
-
             # 保存最后一个序列
             if current_header:
                 self.sequences[current_header] = ''.join(current_sequence)

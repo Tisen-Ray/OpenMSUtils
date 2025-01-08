@@ -1,14 +1,12 @@
 class FastaWriter:
-    def __init__(self, file_path):
-        """初始化 FastaWriter 对象，并指定输出文件路径"""
-        self.file_path = file_path
+    def __init__(self):
+        pass
 
-    def write_to_fasta(self, sequences):
+    def write(self, sequences, filename):
         """
-        将解析后的序列写入新的 FASTA 文件。
-        :param output_filename: 输出文件路径
+        sequences: {header: sequence, ...}
         """
-        with open(self.file_path, 'w') as output_file:
+        with open(filename, 'w') as output_file:
             for header, sequence in sequences.items():
                 output_file.write(f'>{header}\n')
                 # 将序列分为多行，每行不超过 80 个字符

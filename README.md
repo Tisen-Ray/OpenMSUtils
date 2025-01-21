@@ -19,10 +19,33 @@ pip install .
 ```
 
 ### Read MS file
-
+this package provides various classes for reading MS files.
 ```python
-from OpenMSUtils.SpectraUtils import MZMLReader
+from OpenMSUtils.SpectraUtils import MZMLReader, MGFReader, MS1Reader, MS2Reader
 
 reader = MZMLReader()
+meta_data, spectrum = reader.read(file_path)
+
+reader = MGFReader()
+meta_data, spectrum = reader.read(file_path)
+
+reader = MS1Reader()
+meta_data, spectrum = reader.read(file_path)
+
+reader = MS2Reader()
+meta_data, spectrum = reader.read(file_path)
+```
+
+### Read Fasta file && Write Fasta file
+
+```python
+from OpenMSUtils.FastaUtils import FastaReader, FastaWriter
+
+reader = FastaReader()
+sequences = reader.read(file_path)
+
+#sequences: {head: sequence, ...}
+writer = FastaWriter()
+writer.write(sequences, file_path)
 ```
 

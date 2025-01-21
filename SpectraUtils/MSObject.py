@@ -23,7 +23,7 @@ class Peak:
 class MSObject:
     def __init__(
             self,
-            scan_number: int = 0,
+            scan_number: int = -1,
             retention_time: float = 0.0,
             peaks: list[Peak]=None,
             precursor_ion: PrecursorIon = None,

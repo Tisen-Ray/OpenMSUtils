@@ -1,6 +1,5 @@
 import os
-
-from MSObject import MSObject
+from .MSObject import MSObject
 
 
 class MGFReader:

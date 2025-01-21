@@ -1,6 +1,6 @@
 import os
 import re
-from MSObject import MSObject
+from .MSObject import MSObject
 
 class MS1Reader():
     def __init__(self):

@@ -30,7 +30,7 @@ dynamic = [
   "version = 0.0.1",
 ]
 dependencies = [
-    "pandas",
+    "lxml",
     "setuptools_scm",
 ]
 

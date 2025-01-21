@@ -21,7 +21,7 @@ pip install .
 ### Read MS file
 
 ```python
-from SpectraUtils.MZMLReader import MZMLReader
+from OpenMSUtils.SpectraUtils import MZMLReader
 
 reader = MZMLReader()
 ```

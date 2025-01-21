@@ -1,4 +1,3 @@
-from pyteomics import mzml
 from lxml import etree
 import re
 import base64

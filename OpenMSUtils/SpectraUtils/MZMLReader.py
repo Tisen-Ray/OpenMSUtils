@@ -2,7 +2,8 @@ from lxml import etree
 import re
 import base64
 import struct
-from .MSObject import MSObject
+
+from MSObject import MSObject
 
 class MZMLReader(object):
     def __init__(self):
@@ -16,14 +17,14 @@ class MZMLReader(object):
         spectrum = []
         xml_tree = etree.parse(filename)
         root = xml_tree.getroot()
-        if root.tag.endswith('indexList'): # 如果文件中存在indexList标签
+        if root.tag.endswith('indexedmzML'): # 如果文件中存在indexList标签
             index_list, end_offset = self._get_offset_list(root)
             with open(filename, 'rb') as file:
                 for i in range(len(index_list)):
                     file.seek(index_list[i]['offset'])
                     # 读取从当前offset到下一个offset之间的内容
                     if i == len(index_list) - 1:
-                        data = file.read(end_offset - index_list[i]['offset'])
+                        data = file.read(end_offset - index_list[i]['offset']).split(b'</spectrum>')[0] + b'</spectrum>\n'
                     else:
                         data = file.read(index_list[i+1]['offset'] - index_list[i]['offset'])
                     ms_obj = self._parse_spectrum_to_msobject(data)
@@ -67,7 +68,7 @@ class MZMLReader(object):
         if end_offset is None:
             raise ValueError("No end offset found in the indexList element")
                 
-        return offset_list, end_offset
+        return offset_list, int(end_offset)
 
     def _parse_spectrum_to_msobject(self, spectrum_str):
         """
@@ -157,24 +158,8 @@ class MZMLReader(object):
         return ms_obj
 
 if __name__ == "__main__":
-    tree = etree.parse('D:\\code\\Python\\MS\\NADataFormer\\rawData\\20181121a_HAP1_tRNA_19.mzML')
-    root = tree.getroot()
-    # 打印根节点标签
-    print("Root element:", root.tag)
-
-    # 遍历 XML 元素
-    for child in root:
-        print("Tag:", child.tag, "Attributes:", child.attrib)
-
+    file_path = 'D:\\code\\Python\\MS\\NADataFormer\\rawData\\20181121a_HAP1_tRNA_19.mzML'
     reader = MZMLReader()
-    list, end_offset = reader._get_offset_list(root)
-    with open('D:\\code\\Python\\MS\\NADataFormer\\rawData\\20181121a_HAP1_tRNA_19.mzML', 'rb') as file:
-        file.seek(list[7]['offset'])
-        # 读取从偏移量开始的内容
-        data = file.read(list[8]['offset'] - list[7]['offset'])  # 读取20个字节
-        obj = reader._parse_spectrum_to_msobject(data)
-        print(data)
-        print(obj.get_scan_number())
-        print(obj.get_retention_time())
-        print(obj.get_precursor_ion())
-        print(obj.get_peaks())
+    ms_data = reader.read(file_path)
+
+    print(ms_data)

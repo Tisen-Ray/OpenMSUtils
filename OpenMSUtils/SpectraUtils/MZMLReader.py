@@ -3,7 +3,7 @@ import re
 import base64
 import struct
 
-from MSObject import MSObject
+from .MSObject import MSObject
 
 class MZMLReader(object):
     def __init__(self):

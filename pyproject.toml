@@ -1,0 +1,55 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools",
+  "setuptools-scm>=8.0.4",
+]
+
+[project]
+name = "OpenMSUtils"
+description = "A small package to process the MS related information"
+readme = "README.md"
+keywords = [
+  "Mass Spectra",
+  "Fasta Database",
+]
+license = {text = "MIT License"}
+maintainers = [
+  {name = "Yucheng Liao", email = "ycliao@zju.edu.cn"},
+]
+authors = [
+  {name = "Yucheng Liao", email = "ycliao@zju.edu.cn"},
+]
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dynamic = [
+  "version",
+]
+dependencies = [
+    "lxml",
+    "setuptools_scm",
+]
+
+[tool.setuptools]
+packages = ["OpenMSUtils"]
+
+[tool.setuptools_scm]
+write_to = "OpenMSUtils/_version.py"
+write_to_template = "version = __version__ = {version!r}\nversion_tuple = __version_tuple__ = {version_tuple!r}\nrevision = __revision__ = {scm_version.node!r}\n"
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+line_length = 120
+profile = "black"
+
+[tool.flake8]
+max-line-length = 120
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --cov"

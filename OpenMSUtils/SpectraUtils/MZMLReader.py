@@ -2,6 +2,7 @@ from lxml import etree
 import re
 import base64
 import struct
+import zlib
 
 from .MSObject import MSObject
 
@@ -142,15 +143,41 @@ class MZMLReader(object):
             binary_arrays = binary_list.findall("binaryDataArray")
             if len(binary_arrays) >= 2:
                 # 解码base64编码的数据
+                # 获取m/z和intensity数组的编码格式和压缩信息
                 
-                # 获取mz数组
-                mz_binary = base64.b64decode(binary_arrays[0].find("binary").text)
-                mz_values = struct.unpack('d' * (len(mz_binary)//8), mz_binary)
-                
+                mz_cv_params = binary_arrays[0].findall("cvParam")
+                mz_is_64_bit = any(cv_param.get('name') == "64-bit float" for cv_param in mz_cv_params)
+                mz_is_compressed = any(cv_param.get('name') == "zlib compression" for cv_param in mz_cv_params)
+
+                # 解码binary数据
+                mz_binary_data = base64.b64decode(binary_arrays[0].find("binary").text)
+                if mz_is_compressed:
+                    mz_binary_data = zlib.decompress(mz_binary_data)
+
+                # 根据位数解包数据
+                num_floats = len(mz_binary_data) // (8 if mz_is_64_bit else 4)
+                if mz_is_64_bit:
+                    mz_values = struct.unpack('d' * num_floats, mz_binary_data)
+                else:
+                    mz_values = struct.unpack('f' * num_floats, mz_binary_data)
+
                 # 获取intensity数组
-                intensity_binary = base64.b64decode(binary_arrays[1].find("binary").text)
-                intensity_values = struct.unpack('d' * (len(intensity_binary)//8), intensity_binary)
+                intensity_cv_params = binary_arrays[1].findall("cvParam")
+                intensity_is_64_bit = any(cv_param.get('name') == "64-bit float" for cv_param in intensity_cv_params)
+                intensity_is_compressed = any(cv_param.get('name') == "zlib compression" for cv_param in intensity_cv_params)
                 
+                # 解码binary数据
+                intensity_binary_data = base64.b64decode(binary_arrays[1].find("binary").text)
+                if intensity_is_compressed:
+                    intensity_binary_data = zlib.decompress(intensity_binary_data)
+
+                # 根据位数解包数据
+                num_floats = len(intensity_binary_data) // (8 if intensity_is_64_bit else 4)
+                if intensity_is_64_bit:
+                    intensity_values = struct.unpack('d' * num_floats, intensity_binary_data)
+                else:
+                    intensity_values = struct.unpack('f' * num_floats, intensity_binary_data)
+
                 # 添加峰值数据
                 for mz, intensity in zip(mz_values, intensity_values):
                     ms_obj.add_peak(mz=mz, intensity=intensity)

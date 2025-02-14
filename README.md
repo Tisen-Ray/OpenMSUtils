@@ -49,3 +49,31 @@ writer = FastaWriter()
 writer.write(sequences, file_path)
 ```
 
+### Nucleic Acid
+
+```python
+from OpenMSUtils.MolecularUtils import NucleicAcidUtils
+
+# generate a oligonucleotide sequence
+sequence = NucleicAcidUtils.Oligonucleotide("ATCG")
+
+# add modifications to the sequence
+sequence.add_modification(0, NucleicAcidUtils.Modification("Phosphorylation", "HPO3"))
+
+# add end modifications to the sequence
+sequence.add_end_modifications(("Phosphorylation", "HPO3"), ("Phosphorylation", "HPO3"))
+
+# set charge of the sequence
+sequence.set_charge(1)
+
+# set adduct of the sequence
+sequence.set_adduct("H+")
+
+# generate fragments of oligonucleotide
+fragments = sequence.fragments
+
+# get the mass of the sequence
+mass = sequence.mass
+
+```
+

@@ -1,5 +1,6 @@
 import os
-from .MSObject import MSObject
+from tqdm import tqdm
+from .MSObject import MSObject, ScanInfo
 
 
 class MGFReader:
@@ -18,7 +19,7 @@ class MGFReader:
         with open(filename, 'r') as file:
             lines = file.readlines()
 
-        for line in lines:
+        for line in tqdm(lines, desc="Reading spectra"):
             line = line.strip()
             # 跳过空行和注释行
             if not line or line.startswith('#'):
@@ -35,26 +36,26 @@ class MGFReader:
 
             # 解析谱图参数，如 TITLE, PEPMASS, CHARGE 等
             elif '=' in line:
-                if current_spectra:
-                    param_name, param_value = line.split('=', 1)
-                    param_name = param_name.strip()
-                    param_value = param_value.strip()
-                    if param_name == "RTINSECONDS":
-                        RT = float(param_value)
-                        current_spectra.set_retention_time(RT)
-                    elif param_name == "PEPMASS":
-                        precursor_mz = float(param_value.split()[0])
-                        current_spectra.precursor_ion.mz = precursor_mz
-                    elif param_name == "CHARGE":
-                        if param_value.endswith('-'):
-                            charge = -1 * int(param_value[:-1]) # 去掉最后的 '-' 字符
-                        elif param_value.endswith('+'):
-                            charge = int(param_value[:-1])
-                        else:
-                            charge = 0
-                        current_spectra.precursor_ion.charge = charge
+                if not current_spectra:
+                    continue
+                param_name, param_value = line.split('=', 1)
+                param_name = param_name.strip()
+                param_value = param_value.strip()
+                if param_name == "RTINSECONDS":
+                    current_spectra.set_scan_info(retention_time=float(param_value))
+                elif param_name == "PEPMASS":
+                    precursor_mz = float(param_value.split()[0])
+                    current_spectra.set_precursor(mz=precursor_mz)
+                elif param_name == "CHARGE":
+                    if param_value.endswith('-'):
+                        charge = -1 * int(param_value[:-1]) # 去掉最后的 '-' 字符
+                    elif param_value.endswith('+'):
+                        charge = int(param_value[:-1])
                     else:
-                        current_spectra.add_additional_info(key=param_name, value=param_value)
+                        charge = 0
+                    current_spectra.set_precursor(charge=charge)
+                else:
+                    current_spectra.set_additional_info(key=param_name, value=param_value)
 
             # 解析峰值数据（质量和强度）
             else:

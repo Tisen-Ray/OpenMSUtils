@@ -1,16 +1,72 @@
-class PrecursorIon:
-    def __init__(self, mz:float = 0.0, charge:int = 0):
+class Precursor:
+    def __init__(
+        self,
+        mz:float = 0.0,
+        charge:int = 0,
+        ref_scan_number:int = -1,
+        isolation_window: tuple[float, float] = None,
+        activation_method: str = 'unknown',
+        activation_energy: float = 0.0,
+    ):
         """
         初始化前体离子信息
-        :param mz: 质荷比
-        :param charge: 电荷
+        :param precursor_list: 前体离子列表，格式为 [PrecursorIon(mz1, charge1), PrecursorIon(mz2, charge2), ...]
+        :param ref_scan_number: 参考扫描序号
+        :param isolation_window: 隔离窗口，格式为 (mz1, mz2)
+        :param activation_method: 激活方法
         """
-        self.mz = mz        # 质荷比
-        self.charge = charge # 电荷
+        if isolation_window is None:
+            self.isolation_window = (0.0, 0.0)
+        else:
+            self.isolation_window = isolation_window
 
+        self.ref_scan_number = ref_scan_number # 参考扫描序号
+        self.mz = mz
+        self.charge = charge
+        self.activation_method = activation_method
+        self.activation_energy = activation_energy
+    
+    def set_activation(self, method:str = None, energy:float = None):
+        if not method is None:
+            self.activation_method = method
+        if not energy is None:
+            self.activation_energy = energy
+    
+    def set_isolation_window(self, window:tuple[float, float]):
+        self.isolation_window = window
+    
     def __repr__(self):
-        return f"PrecursorIon(mz={self.mz}, charge={self.charge})"
+        return f"Precursor(mz={self.mz}, charge={self.charge}, ref_scan_number={self.ref_scan_number}, isolation_window={self.isolation_window}, activation_method={self.activation_method}, activation_energy={self.activation_energy})"
 
+class ScanInfo:
+    def __init__(
+            self, 
+            scan_number:int = -1,
+            retention_time:float = 0.0,
+            drift_time:float = 0.0,
+            scan_window:tuple[float, float] = None,
+            additional_info:dict = None
+    ):
+        if additional_info is None:
+            self.additional_info = {}
+        else:
+            self.additional_info = additional_info
+
+        if scan_window is None:
+            self.scan_window = (0.0, 0.0)
+        else:
+            self.scan_window = scan_window
+
+        self.scan_number = scan_number
+        self.retention_time = retention_time
+        self.drift_time = drift_time
+    
+    def set_additional_info(self, key:str, value:any):
+        self.additional_info[key] = value
+    
+    def __repr__(self):
+        return f"ScanInfo(scan_number={self.scan_number}, retention_time={self.retention_time}, drift_time={self.drift_time}, scan_window={self.scan_window}, additional_info={self.additional_info})"
+        
 class Peak:
     def __init__(self, mz:float = 0.0, intensity:float = 0.0):
         self.mz = mz
@@ -23,86 +79,100 @@ class Peak:
 class MSObject:
     def __init__(
             self,
-            scan_number: int = -1,
-            retention_time: float = 0.0,
-            peaks: list[Peak]=None,
-            precursor_ion: PrecursorIon = None,
             level:int = 1,
+            peaks: list[Peak]=None,
+            precursor: Precursor = None,
+            scan: ScanInfo = None,
             additional_info: dict=None
     ):
         """
         初始化 MSObject 类，用于存储质谱的基本信息
-        :param scan_number: 扫描序号
-        :param retention_time: 保留时间
-        :param peaks: 谱峰数据，格式为 [(mz1, intensity1), (mz2, intensity2), ...]
-        :param precursor_ion: 前体离子信息，PrecursorIon 类的实例
         :param level: 几级谱（例如：1表示一级谱，2表示二级谱）
+        :param peaks: 谱峰数据，格式为 [(mz1, intensity1), (mz2, intensity2), ...]
+        :param precursor: 前体离子信息，Precursor 类的实例
+        :param scan: 扫描信息，ScanInfo 类的实例
         :param additional_info: 其他信息，字典类型，默认空字典
         """
-        if additional_info is None:
-            additional_info = {}
-        if peaks is None:
-            peaks = []
-        if precursor_ion is None:
-            precursor_ion = PrecursorIon()
-        self.scan_number = scan_number            # 扫描序号
-        self.retention_time = retention_time      # 保留时间
-        self.peaks = peaks                        # 谱峰数据 [(mz, intensity), ...]
-        self.precursor_ion = precursor_ion        # 前体离子信息，PrecursorIon 实例
+        if additional_info is None:# 其他信息，字典类型，默认空字典
+            self._additional_info = {}
+        else:
+            self._additional_info = additional_info   
+        if peaks is None:# 谱峰数据 [(mz, intensity), ...]
+            self._peaks = []
+        else:
+            self._peaks = peaks
+        if precursor is None:# 前体离子信息，Precursor 实例
+            self._precursor = Precursor()
+        else:
+            self._precursor = precursor
+        if scan is None:# 扫描信息，ScanInfo 实例
+            self._scan = ScanInfo()
+        else:
+            self._scan = scan
         self.level = level                        # 几级谱
-        self.additional_info = additional_info    # 其他信息
 
     def __repr__(self):
-        return (f"MSObject(scan_number={self.scan_number}, retention_time={self.retention_time}, "
-                f"peaks={self.peaks}, precursor_ion={self.precursor_ion}, "
-                f"level={self.level}, additional_info={self.additional_info})")
+        return (f"MSObject(level={self.level}, peaks={self._peaks}, precursor={self._precursor}, scan={self._scan}, additional_info={self._additional_info})")
 
-    def add_peak(self, peak: Peak):
-        self.peaks.append(peak)
+    @property
+    def peaks(self):
+        return self._peaks
+
+    @property
+    def precursor(self):
+        return self._precursor
+
+    @property
+    def scan(self):
+        return self._scan
+
+    @property
+    def additional_info(self):
+        return self._additional_info
 
     def add_peak(self, mz:float, intensity:float):
         self.peaks.append(Peak(mz=mz, intensity=intensity))
+    
+    def clear_peaks(self):
+        self._peaks = []
 
-    def set_peaks(self, peaks: list[Peak]):
-        self.peaks = peaks
-
-    def get_peaks(self):
-        """获取所有谱峰的 mz 值"""
-        return self.peaks
-
-    def set_scan_number(self, scan_number: int):
-        self.scan_number = scan_number
-
-    def get_scan_number(self):
-        return self.scan_number
-
-    def set_retention_time(self, retention_time: float):
-        self.retention_time = retention_time
-
-    def get_retention_time(self):
-        return self.retention_time
-
-    def set_precursor_ion(self, precursor_ion:PrecursorIon):
-        self.precursor_ion = precursor_ion
-
-    def set_precursor_ion(self, mz:float, charge:int):
-        self.precursor_ion = PrecursorIon(mz=mz, charge=charge)
-
-    def get_precursor_ion(self):
-        return self.precursor_ion
-
-    def set_level(self, level: int):
+    def set_additional_info(self, key:str, value:any):
+        self._additional_info[key] = value
+    
+    def clear_additional_info(self):
+        self._additional_info = {}
+    
+    def set_level(self, level:int):
         self.level = level
+    
+    def set_precursor(self, ref_scan_number:int=None, mz:float=None, charge:int=None, activation_method:str=None, activation_energy:float=None, isolation_window:tuple[float, float]=None):
+        if not ref_scan_number is None:
+            self._precursor.ref_scan_number = ref_scan_number
+        if not mz is None:
+            self._precursor.mz = mz
+        if not charge is None:
+            self._precursor.charge = charge
+        if not activation_method is None:
+            self._precursor.activation_method = activation_method
+        if not activation_energy is None:
+            self._precursor.activation_energy = activation_energy
+        if not isolation_window is None:
+            self._precursor.isolation_window = isolation_window
 
-    def get_level(self):
-        return self.level
+    def set_scan_info(self, scan_number:int=None, retention_time:float=None, drift_time:float=None, scan_window:tuple[float, float]=None):
+        if not scan_number is None:
+            self._scan.scan_number = scan_number
+        if not retention_time is None:
+            self._scan.retention_time = retention_time
+        if not drift_time is None:
+            self._scan.drift_time = drift_time
+        if not scan_window is None:
+            self._scan.scan_window = scan_window
+    
+    def set_scan_additional_info(self, key:str, value:any):
+        self._scan.additional_info[key] = value
 
-    def set_additional_info(self, additional_info: dict):
-        self.additional_info = additional_info
 
-    def add_additional_info(self, key, value):
-        """添加额外的质谱信息"""
-        self.additional_info[key] = value
+if __name__ == "__main__":
+    pass
 
-    def get_additional_info(self):
-        return self.additional_info

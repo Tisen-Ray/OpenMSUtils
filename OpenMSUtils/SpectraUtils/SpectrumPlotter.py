@@ -8,6 +8,9 @@ class SpectrumPlotter:
 
     def plot_mz(self, ms_object: MSObject):
         peaks = ms_object.peaks
+        if len(peaks) == 0:
+            print("No peaks found in the spectrum")
+            return
         # 提取 mz 和 intensity 数据
         mz_list = [peak.mz for peak in peaks]
         intensity_list = [peak.intensity for peak in peaks]

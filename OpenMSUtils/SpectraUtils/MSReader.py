@@ -1,5 +1,6 @@
 import os
 import re
+from tqdm import tqdm
 from .MSObject import MSObject
 
 class MS1Reader():
@@ -19,7 +20,7 @@ class MS1Reader():
             lines = file.readlines()
 
         current_spectrum = None
-        for line in lines:
+        for line in tqdm(lines, desc="Reading spectra"):
             line = line.strip()
 
             if line.startswith('H'):  # 头信息行
@@ -30,18 +31,18 @@ class MS1Reader():
             elif line.startswith('S'):  # 新的质谱数据段
                 if current_spectrum is not None:
                     spectra.append(current_spectrum)
-
                 scan_number = int(line.split()[2])
-                current_spectrum = MSObject(scan_number=scan_number)
+                current_spectrum = MSObject()
+                current_spectrum.set_scan_info(scan_number=scan_number)
 
             elif line.startswith('I'):  # 质谱参数行（如：NumberOfPeaks, RetTime等）
                 key, value = self._parse_info(line)
                 if not key is None:
                     if key == "RTime":
                         RT = float(value)
-                        current_spectrum.set_retention_time(retention_time=RT)
+                        current_spectrum.set_scan_info(retention_time=RT)
                     else:
-                        current_spectrum.add_additional_info(key=key, value=value)
+                        current_spectrum.set_additional_info(key=key, value=value)
 
             else:  # 质谱数据行
                 mz, intensity = self._parse_peak(line)
@@ -109,23 +110,24 @@ class MS2Reader:
                     spectra.append(current_spectrum)
 
                 scan_number = int(line.split()[2])
-                current_spectrum = MSObject(scan_number=scan_number, level=2)
+                current_spectrum = MSObject(level=2)
+                current_spectrum.set_scan_info(scan_number=scan_number)
                 precursor_mz = float(line.split()[3])
-                current_spectrum.precursor_ion.mz = precursor_mz
+                current_spectrum.set_precursor(mz=precursor_mz)
 
             elif line.startswith('I'):  # 质谱参数行（如：NumberOfPeaks, RetTime等）
                 key, value = self._parse_info(line)
                 if not key is None:
                     if key == "RTime":
                         RT = float(value)
-                        current_spectrum.set_retention_time(retention_time=RT)
+                        current_spectrum.set_scan_info(retention_time=RT)
                     else:
-                        current_spectrum.add_additional_info(key=key, value=value)
+                        current_spectrum.set_additional_info(key=key, value=value)
 
             elif line.startswith('Z'):
                 charge = int(line.split()[1])
                 if current_spectrum is not None:
-                    current_spectrum.precursor_ion.charge = charge
+                    current_spectrum.set_precursor(charge=charge)
 
             else:  # 质谱数据行
                 mz, intensity = self._parse_peak(line)

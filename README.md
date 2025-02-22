@@ -59,6 +59,27 @@ print(additional_info)
 
 ```
 
+### ion mobility spectrum
+this package provides various classes for reading and processing ion mobility spectrum
+
+Here is an example of reading ion mobility spectrum:
+
+```python
+from OpenMSUtils.SpectraUtils import MZMLReader, SpectrumPlotter, IonMobilityUtils
+
+reader = MZMLReader()
+meta_data, spectra = reader.read(file_path)
+
+ion_mobility_utils = IonMobilityUtils()
+ion_mobility_utils.get_ion_mobility(spectra[start_index:end_index])
+
+plotter = SpectrumPlotter()
+plotter.plot_ion_mobility(ion_mobility_utils.ion_mobility_spectrum, time_range=(0, 100), mz_range=(0, 1000), time_bins=200, mz_bins=200)
+
+```
+
+
+
 ### Read Fasta file && Write Fasta file
 
 ```python

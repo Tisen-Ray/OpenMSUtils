@@ -46,7 +46,8 @@ class MS1Reader():
 
             else:  # 质谱数据行
                 mz, intensity = self._parse_peak(line)
-                current_spectrum.add_peak(mz=mz, intensity=intensity)
+                if intensity > 0:
+                    current_spectrum.add_peak(mz=mz, intensity=intensity)
 
         # 在结束时添加最后一组质谱数据
         if current_spectrum is not None:
@@ -131,7 +132,8 @@ class MS2Reader:
 
             else:  # 质谱数据行
                 mz, intensity = self._parse_peak(line)
-                current_spectrum.add_peak(mz=mz, intensity=intensity)
+                if intensity > 0:
+                    current_spectrum.add_peak(mz=mz, intensity=intensity)
 
         # 在结束时添加最后一组质谱数据
         if current_spectrum is not None:

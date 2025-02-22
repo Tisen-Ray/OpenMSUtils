@@ -61,7 +61,7 @@ class MGFReader:
             else:
                 try:
                     mz, intensity = map(float, line.split())
-                    if current_spectra:
+                    if current_spectra and intensity > 0:
                         current_spectra.add_peak(mz=mz, intensity=intensity)
                 except ValueError:
                     continue

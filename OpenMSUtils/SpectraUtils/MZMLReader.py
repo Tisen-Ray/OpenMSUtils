@@ -263,7 +263,8 @@ class MZMLReader(object):
 
                 # 添加峰值数据
                 for mz, intensity in zip(mz_values, intensity_values):
-                    ms_obj.add_peak(mz=mz, intensity=intensity)
+                    if intensity > 0:
+                        ms_obj.add_peak(mz=mz, intensity=intensity)
         
         return ms_obj
 

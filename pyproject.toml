@@ -33,6 +33,9 @@ dynamic = [
 dependencies = [
     "lxml",
     "setuptools_scm",
+    "tqdm",
+    "matplotlib",
+    "numpy"
 ]
 
 [tool.setuptools]

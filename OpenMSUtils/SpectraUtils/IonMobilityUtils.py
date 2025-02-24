@@ -12,8 +12,10 @@ class IonMobilityUtils:
                     self._ion_mobility_spectrum[drift_time] = ms_object.peaks
                 else:
                     self._ion_mobility_spectrum[drift_time].extend(ms_object.peaks)
-    
+
+
     @property
     def ion_mobility_spectrum(self):
         return self._ion_mobility_spectrum
+
 

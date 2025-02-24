@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 from .MSObject import MSObject
 
 class SpectrumPlotter:
@@ -39,23 +40,31 @@ class SpectrumPlotter:
         mz_step = (mz_range[1] - mz_range[0]) / mz_bins
         time_list = np.linspace(time_range[0], time_range[1], time_bins)
         mz_list = np.linspace(mz_range[0], mz_range[1], mz_bins)
-        ion_mobility_matrix = np.zeros((len(time_list), len(mz_list)))
+        ion_mobility_matrix = np.zeros((len(time_list),len(mz_list)))
         for time, peaks in ion_mobility_spectrum.items():
             for peak in peaks:
                 mz = peak.mz
                 intensity = peak.intensity
                 mz_index = (int)((mz - mz_range[0]) / mz_step)
                 time_index = (int)((time - time_range[0]) / time_step)
-                if mz_index < 0 or mz_index >= len(mz_list) or time_index < 0 or time_index >= len(time_list):
+                if mz_index < 0 or mz_index >= len(mz_list) or time_index < 0 or time_index >= time_bins:
                     continue
                 ion_mobility_matrix[time_index][mz_index] += intensity
 
-        plt.imshow(ion_mobility_matrix, cmap="viridis")
-        plt.colorbar()
-        plt.xlabel("m/z")
-        plt.ylabel("Time")
+        vmin = 0
+        vmax = np.percentile(ion_mobility_matrix, 90)
+        if vmin > vmax:
+            vmin = vmax-1
+        # 调整颜色轴的范围，降低亮色的标准
+        plt.imshow(ion_mobility_matrix, cmap="viridis",norm=LogNorm(vmin=vmin, vmax=vmax))
+        plt.xticks(np.linspace(0, len(mz_list), 5), np.linspace(mz_range[0], mz_range[1], 5))
+        plt.yticks(np.linspace(0, len(time_list), 5), np.linspace(time_range[0], time_range[1], 5))
+        plt.gca().invert_yaxis()
+        plt.xlabel("Time")
+        plt.ylabel("m/z")
         plt.title("Ion Mobility Spectrum")
         plt.show()
+        return ion_mobility_matrix
 
 if __name__ == "__main__":
     pass

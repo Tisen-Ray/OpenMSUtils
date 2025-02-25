@@ -50,7 +50,7 @@ class SpectrumPlotter:
                     continue
                 ion_mobility_matrix[time_index][mz_index] += intensity
 
-        plt.imshow(ion_mobility_matrix, cmap="viridis")
+        plt.imshow(ion_mobility_matrix, cmap="hot", interpolation='nearest')
         plt.colorbar()
         plt.xlabel("m/z")
         plt.ylabel("Time")

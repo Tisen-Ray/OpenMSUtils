@@ -1,66 +1,60 @@
 from .accurate_molmass import EnhancedFormula
 from .ModificationUtils import Modification
 
-class Nucleotide():
-    def __init__(self, character, deoxidation=False):
+class AminoAcid():
+    """
+    Amino acid class
+    """
+    AA_formula = {
+        "A": "C3H5NO", #Alanine
+        "C": "C3H5NOS", #Cysteine
+        "D": "C4H5NO3", #Aspartic acid
+        "E": "C5H7NO3", #Glutamic acid
+        "F": "C9H9NO", #Phenylalanine
+        "G": "C2H3NO", #Glycine
+        "H": "C6H7N3O", #Histidine
+        "I": "C6H11NO", #Isoleucine
+        "K": "C6H12N2O", #Lysine
+        "L": "C6H11NO", #Leucine
+        "M": "C5H9NOS", #Methionine
+        "N": "C4H6N2O2", #Asparagine
+        "P": "C5H7NO", #Proline
+        "Q": "C5H8N2O2", #Glutamine
+        "R": "C6H12N4O", #Arginine
+        "S": "C3H5NO2", #Serine
+        "T": "C4H7NO2", #Threonine
+        "U": "C3H5NOSe", #selenocysteine
+        "V": "C5H9NO", #Valine
+        "W": "C11H10N2O", #Tryptophan
+        "Y": "C9H9NO2", #Tyrosine
+    }
+    def __init__(self, character: str):
         self.character = character
-        self.deoxidation = deoxidation
 
     @property
     def mass(self):
-        formula = EnhancedFormula("C5H8O6P")
-        if self.character == "A":
-            formula += EnhancedFormula("C5H4N5")
-        elif self.character == "G":
-            formula += EnhancedFormula("C5H4N5O")
-        elif self.character == "C":
-            formula += EnhancedFormula("C4H4N3O")
-        elif self.character == "T":
-            formula += EnhancedFormula("C5H5N2O2")
-        elif self.character == "U":
-            formula += EnhancedFormula("C4H5N2O2")
-
-        if self.deoxidation:
-            formula -= EnhancedFormula("O")
-
+        formula = EnhancedFormula(self.AA_formula[self.character])
         return formula.isotope.mass
-    
-    @property
-    def nucleobase(self):
-        if self.character == "A":
-            return EnhancedFormula("C5H4N5").isotope
-        elif self.character == "G":
-            return EnhancedFormula("C5H4N5O").isotope
-        elif self.character == "C":
-            return EnhancedFormula("C4H4N3O").isotope
-        elif self.character == "T":
-            return EnhancedFormula("C5H5N2O2").isotope
-        elif self.character == "U":
-            return EnhancedFormula("C4H5N2O2").isotope
 
-class Oligonucleotide():
-    """
-    Oligonucleotide class
-    """
-    def __init__(self, sequence: str, deoxidation=False):
+class Peptide():
+    def __init__(self, sequence: str):
         """
-        sequence: str (5' -> 3')
+        sequence: str (N-terminus -> C-terminus)
         """
         self._sequence = sequence
-        self._deoxidation = deoxidation
         self._modifications = {}
         self._charge = 0
         self._adduct_mass = None
-        self._end_3_modification = None
-        self._end_5_modification = None
+        self._end_C_modification = None
+        self._end_N_modification = None
         self._fragments_type = None
     
-    def set_end_modifications(self, end_3_modification: tuple[str, str], end_5_modification: tuple[str, str]):
-        end_3_name, end_3_formula = end_3_modification
-        end_5_name, end_5_formula = end_5_modification
+    def set_end_modifications(self, end_C_modification: tuple[str, str], end_N_modification: tuple[str, str]):
+        end_C_name, end_C_formula = end_C_modification
+        end_N_name, end_N_formula = end_N_modification
 
-        self._end_3_modification = Modification(end_3_name, end_3_formula)
-        self._end_5_modification = Modification(end_5_name, end_5_formula)
+        self._end_C_modification = Modification(end_C_name, end_C_formula)
+        self._end_N_modification = Modification(end_N_name, end_N_formula)
     
     def add_modification(self, index: int, modification: Modification):
         self._modifications[index] = modification
@@ -84,19 +78,18 @@ class Oligonucleotide():
     
     def set_fragments_type(self, fragments_type: list[str]):
         for fragment_type in fragments_type:
-            if fragment_type not in ["a-B", "a", "b", "c", "d", "w", "x", "y", "z"]:
+            if fragment_type not in ["a", "b", "c", "x", "y", "z"]:
                 raise ValueError(f"Invalid fragment type: {fragment_type}")
         self._fragments_type = fragments_type
-    
+
     @property
     def mass(self):
-        mass = self._end_5_modification.mass if self._end_5_modification else 0.0
-        for i, nucleotide in enumerate(self._sequence):
-            mass += Nucleotide(nucleotide, self._deoxidation).mass
-            if i in self._modifications:
-                mass += self._modifications[i].mass
-        mass += self._end_3_modification.mass if self._end_3_modification else 0.0
-        return mass
+        total_mass = sum(AminoAcid(aa).mass for aa in self._sequence)
+        for index, modification in self._modifications.items():
+            total_mass += modification.mass
+        total_mass += self._end_C_modification.mass if self._end_C_modification else 0.0
+        total_mass += self._end_N_modification.mass if self._end_N_modification else 0.0
+        return total_mass
 
     @property
     def mz(self):
@@ -107,15 +100,15 @@ class Oligonucleotide():
                 self._adduct_mass = -EnhancedFormula("H+").isotope.mass
             elif self._adduct_mass is None and self._charge > 0:
                 self._adduct_mass = EnhancedFormula("H+").isotope.mass
-            return (self.mass + abs(self._charge) * self._adduct_mass)/ abs(self._charge)
-    
+            return (self.mass + self._adduct_mass) / self._charge
+
     @property
     def fragments(self):
-        adduct_mass = self._adduct_mass if self._adduct_mass is not None else -EnhancedFormula("H+").isotope.mass
-        charge = self._charge if self._charge is not None else -1
+        adduct_mass = self._adduct_mass if self._adduct_mass is not None else EnhancedFormula("H+").isotope.mass
+        charge = self._charge if self._charge is not None else 1
         if not (adduct_mass < 0 and charge < 0) or (adduct_mass > 0 and charge > 0):
             raise ValueError(f"Invalid adduct/charge combination: adduct={adduct_mass}, charge={charge}")
-        fragments_type = self._fragments_type if self._fragments_type is not None else ["a", "b", "c", "d", "w", "x", "y", "z"]
+        fragments_type = self._fragments_type if self._fragments_type is not None else ["b", "y"]
         charge_sign = 1 if charge > 0 else -1
         max_fragment_charge = abs(charge)
 
@@ -134,22 +127,19 @@ class Oligonucleotide():
     
     def _generate_fragments(self, ion_type: str):
         ion_mod = {
-            'a': -EnhancedFormula("HPO3").isotope.mass, 
-            'a_B': -EnhancedFormula("HPO3").isotope.mass, 
-            'b': -EnhancedFormula("HPO2").isotope.mass,
-            'c': 0.0,
-            'd': EnhancedFormula("O").isotope.mass,
-            'w': EnhancedFormula("HPO3").isotope.mass, 
-            'x': EnhancedFormula("HPO2").isotope.mass, 
+            'a': -EnhancedFormula("CO").isotope.mass, 
+            'b': 0.0,
+            'c': EnhancedFormula("NH").isotope.mass,
+            'x': EnhancedFormula("CO").isotope.mass, 
             'y': 0.0, 
-            'z': -EnhancedFormula("O").isotope.mass
+            'z': -EnhancedFormula("NH").isotope.mass
         }
 
         fragments = []
-        if ion_type in ["a", "a_B", "b", "c", "d"]:
-            fragment_mass = self._end_5_modification.mass if self._end_5_modification else 0.0
+        if ion_type in ["a", "b", "c"]:
+            fragment_mass = self._end_N_modification.mass if self._end_N_modification else 0.0
             for i, nucleotide in enumerate(self._sequence):
-                fragment_mass += Nucleotide(nucleotide, self._deoxidation).mass
+                fragment_mass += AminoAcid(nucleotide).mass
                 if i in self._modifications:
                     fragment_mass += self._modifications[i].mass
                 # Skip record the first and last nucleotide
@@ -157,11 +147,11 @@ class Oligonucleotide():
                     continue
                 fragments.append(fragment_mass + ion_mod[ion_type])
 
-        elif ion_type in ["w", "x", "y", "z"]:
-            fragment_mass = self._end_3_modification.mass if self._end_3_modification else 0.0
+        elif ion_type in ["x", "y", "z"]:
+            fragment_mass = self._end_C_modification.mass if self._end_C_modification else 0.0
             for i in reversed(range(len(self._sequence))):
                 nucleotide = self._sequence[i]
-                fragment_mass += Nucleotide(nucleotide, self._deoxidation).mass
+                fragment_mass += AminoAcid(nucleotide).mass
                 if i in self._modifications:
                     fragment_mass += self._modifications[i].mass
                 # Skip record the first and last nucleotide
@@ -170,8 +160,10 @@ class Oligonucleotide():
                 fragments.append(fragment_mass + ion_mod[ion_type])
 
         return fragments
-                
+        
+
 
 if __name__ == "__main__":
-    pass
-
+    from accurate_molmass import EnhancedFormula
+    formula = EnhancedFormula("Se")
+    print(formula.isotope)

@@ -52,10 +52,10 @@ class SpectrumPlotter:
                 ion_mobility_matrix[time_index][mz_index] += intensity
 
         # 调整颜色轴的范围，降低亮色的标准
-        plt.imshow(ion_mobility_matrix, cmap="viridis",vmin=0, vmax=np.percentile(ion_mobility_matrix, 90))
+        im=plt.imshow(ion_mobility_matrix, cmap="viridis",vmin=0, vmax=np.percentile(ion_mobility_matrix, 90))
         plt.xticks(np.linspace(0, len(mz_list), 5), np.linspace(mz_range[0], mz_range[1], 5))
         plt.yticks(np.linspace(0, len(time_list), 5), np.linspace(time_range[0], time_range[1], 5))
-        plt.colorbar("intensity")
+        plt.colorbar(im,label="intensity")
         plt.gca().invert_yaxis()
         plt.xlabel("Time")
         plt.ylabel("m/z")

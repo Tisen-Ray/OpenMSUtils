@@ -1,6 +1,6 @@
 import os
 from tqdm import tqdm
-from .MSObject import MSObject, ScanInfo
+from .MSObject import MSObject, Scan
 
 
 class MGFReader:

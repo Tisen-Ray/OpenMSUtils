@@ -1,4 +1,4 @@
-class Precursor:
+class Precursor(object):
     def __init__(
         self,
         mz:float = 0.0,
@@ -35,10 +35,7 @@ class Precursor:
     def set_isolation_window(self, window:tuple[float, float]):
         self.isolation_window = window
     
-    def __repr__(self):
-        return f"Precursor(mz={self.mz}, charge={self.charge}, ref_scan_number={self.ref_scan_number}, isolation_window={self.isolation_window}, activation_method={self.activation_method}, activation_energy={self.activation_energy})"
-
-class ScanInfo:
+class Scan(object):
     def __init__(
             self, 
             scan_number:int = -1,
@@ -64,25 +61,13 @@ class ScanInfo:
     def set_additional_info(self, key:str, value:any):
         self.additional_info[key] = value
     
-    def __repr__(self):
-        return f"ScanInfo(scan_number={self.scan_number}, retention_time={self.retention_time}, drift_time={self.drift_time}, scan_window={self.scan_window}, additional_info={self.additional_info})"
-        
-class Peak:
-    def __init__(self, mz:float = 0.0, intensity:float = 0.0):
-        self.mz = mz
-        self.intensity = intensity
-
-    def __repr__(self):
-        return f"Peak(mz={self.mz}, intensity={self.intensity})"
-
-
 class MSObject:
     def __init__(
             self,
             level:int = 1,
-            peaks: list[Peak]=None,
+            peaks: list[tuple[float, float]]=None,
             precursor: Precursor = None,
-            scan: ScanInfo = None,
+            scan: Scan = None,
             additional_info: dict=None
     ):
         """
@@ -106,13 +91,10 @@ class MSObject:
         else:
             self._precursor = precursor
         if scan is None:# 扫描信息，ScanInfo 实例
-            self._scan = ScanInfo()
+            self._scan = Scan()
         else:
             self._scan = scan
         self.level = level                        # 几级谱
-
-    def __repr__(self):
-        return (f"MSObject(level={self.level}, peaks={self._peaks}, precursor={self._precursor}, scan={self._scan}, additional_info={self._additional_info})")
 
     @property
     def peaks(self):
@@ -127,11 +109,19 @@ class MSObject:
         return self._scan
 
     @property
+    def scan_number(self):
+        return self._scan.scan_number
+
+    @property
+    def retention_time(self):
+        return self._scan.retention_time
+
+    @property
     def additional_info(self):
         return self._additional_info
 
     def add_peak(self, mz:float, intensity:float):
-        self.peaks.append(Peak(mz=mz, intensity=intensity))
+        self._peaks.append((mz, intensity))
     
     def clear_peaks(self):
         self._peaks = []
@@ -145,7 +135,15 @@ class MSObject:
     def set_level(self, level:int):
         self.level = level
     
-    def set_precursor(self, ref_scan_number:int=None, mz:float=None, charge:int=None, activation_method:str=None, activation_energy:float=None, isolation_window:tuple[float, float]=None):
+    def set_precursor(
+            self, 
+            ref_scan_number:int=None, 
+            mz:float=None, 
+            charge:int=None, 
+            activation_method:str=None, 
+            activation_energy:float=None, 
+            isolation_window:tuple[float, float]=None
+        ):
         if not ref_scan_number is None:
             self._precursor.ref_scan_number = ref_scan_number
         if not mz is None:
@@ -159,7 +157,13 @@ class MSObject:
         if not isolation_window is None:
             self._precursor.isolation_window = isolation_window
 
-    def set_scan_info(self, scan_number:int=None, retention_time:float=None, drift_time:float=None, scan_window:tuple[float, float]=None):
+    def set_scan(
+            self, 
+            scan_number:int=None, 
+            retention_time:float=None, 
+            drift_time:float=None, 
+            scan_window:tuple[float, float]=None
+        ):
         if not scan_number is None:
             self._scan.scan_number = scan_number
         if not retention_time is None:

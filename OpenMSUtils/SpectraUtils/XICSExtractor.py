@@ -50,7 +50,6 @@ class XICSExtractor:
         self.mzml_file = mzml_file
         self.ppm_tolerance = ppm_tolerance
         self.reader = MZMLReader()
-        self.mzml_obj = None
         self.ms_objects = []
         self.ms1_objects = []
         self.ms2_objects = []
@@ -58,14 +57,14 @@ class XICSExtractor:
     def load_mzml(self):
         """加载 mzML 文件并转换为 MSObject 列表"""
         print(f"正在读取 mzML 文件: {self.mzml_file}")
-        self.mzml_obj = self.reader.read(self.mzml_file, parse_spectra=True, parallel=True)
+        mzml_obj = self.reader.read(self.mzml_file, parse_spectra=True, parallel=True)
         
-        if not self.mzml_obj.run or not self.mzml_obj.run.spectra_list:
+        if not mzml_obj.run or not mzml_obj.run.spectra_list:
             raise ValueError("未能从 mzML 文件中读取到谱图数据")
             
         print("正在将谱图转换为 MSObject...")
         self.ms_objects = []
-        for spectrum in tqdm(self.mzml_obj.run.spectra_list, desc="转换谱图"):
+        for spectrum in tqdm(mzml_obj.run.spectra_list, desc="转换谱图"):
             ms_obj = SpectraConverter.to_msobject(spectrum)
             self.ms_objects.append(ms_obj)
             
@@ -74,7 +73,7 @@ class XICSExtractor:
                 self.ms1_objects.append(ms_obj)
             elif ms_obj.level == 2:
                 self.ms2_objects.append(ms_obj)
-                
+        del mzml_obj
         print(f"共读取 {len(self.ms_objects)} 个谱图，其中 MS1: {len(self.ms1_objects)}，MS2: {len(self.ms2_objects)}")
         
     def _calculate_isotope_mzs(self, mz: float, charge: int, num_isotopes: int = 4) -> List[float]:
@@ -86,25 +85,15 @@ class XICSExtractor:
             isotope_mzs.append(isotope_mz)
         return isotope_mzs
     
-    def _filter_ms2_by_precursor(self, precursor_mz: float) -> List[MSObject]:
-        """根据前体离子质荷比和保留时间筛选 MS2 谱图"""
-        filtered_ms2 = []
-        
-        for ms2 in self.ms2_objects:
-            # 检查前体离子质荷比是否在隔离窗口内
-            if not (ms2.precursor.isolation_window[0] <= precursor_mz <= ms2.precursor.isolation_window[1]):
-                continue
-                
-            filtered_ms2.append(ms2)
-            
-        return filtered_ms2
-    
-    def _filter_ms2_by_rt(self, rt_start: float, rt_stop: float) -> List[MSObject]:
+    def _filter_ms2_by_rt_and_precursor(self, rt_start: float, rt_stop: float, precursor_mz: float) -> List[MSObject]:
         """根据保留时间筛选 MS2 谱图"""
         filtered_ms2 = []
         
         for ms2 in self.ms2_objects:
             if not (rt_start <= ms2.retention_time <= rt_stop):
+                continue
+
+            if not (ms2.precursor.isolation_window[0] <= precursor_mz <= ms2.precursor.isolation_window[1]):
                 continue
             
             filtered_ms2.append(ms2)
@@ -247,7 +236,7 @@ class XICSExtractor:
         rt_start = peptide_info.rt_start
         rt_stop = peptide_info.rt_stop
 
-        filtered_ms2 = self._filter_ms2_by_rt(rt_start, rt_stop)
+        filtered_ms2 = self._filter_ms2_by_rt_and_precursor(rt_start, rt_stop, peptide_info.mz)
             
         # 提取每个碎片离子的 XIC
         xic_results = []

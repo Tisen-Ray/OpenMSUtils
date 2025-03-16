@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .MSObject import MSObject
 from typing import List, Optional
+
+from .MSObject import MSObject
 from .XICSExtractor import XICResult, PolymerInfo
 
 class SpectraPlotter:

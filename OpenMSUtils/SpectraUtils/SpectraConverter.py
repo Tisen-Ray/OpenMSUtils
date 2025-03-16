@@ -1,10 +1,11 @@
-from OpenMSUtils.SpectraUtils.MSObject import MSObject
-from OpenMSUtils.SpectraUtils.MZMLUtils import Spectrum as MZMLSpectrum
-from OpenMSUtils.SpectraUtils.MZMLUtils import CVParam, BinaryDataArray
 import base64
 import struct
 import zlib
 from typing import Type, Any
+
+from .MSObject import MSObject
+from .MZMLUtils import Spectrum as MZMLSpectrum
+from .MZMLUtils import CVParam, BinaryDataArray
 
 class SpectraConverter:
     """

@@ -118,7 +118,7 @@ class XICSExtractor:
             closest_peak_idx = None
             min_delta = float('inf')
             
-            for i, peak_mz in enumerate(ms1.peaks[:, 0]):
+            for i, peak_mz in enumerate([item[0] for item in ms1.peaks]):
                 if mz_min <= peak_mz <= mz_max:
                     delta = abs(peak_mz - mz)
                     if delta < min_delta:
@@ -126,8 +126,8 @@ class XICSExtractor:
                         closest_peak_idx = i
             
             if closest_peak_idx is not None:
-                peak_mz = ms1.peaks[closest_peak_idx, 0]
-                peak_intensity = ms1.peaks[closest_peak_idx, 1]
+                peak_mz = ms1.peaks[closest_peak_idx][0]
+                peak_intensity = ms1.peaks[closest_peak_idx][1]
                 
                 rt_values.append(ms1.retention_time)
                 intensity_values.append(peak_intensity)
@@ -170,7 +170,7 @@ class XICSExtractor:
             closest_peak_idx = None
             min_delta = float('inf')
             
-            for i, peak_mz in enumerate(ms2.peaks[:, 0]):
+            for i, peak_mz in enumerate([item[0] for item in ms2.peaks]):
                 if mz_min <= peak_mz <= mz_max:
                     delta = abs(peak_mz - mz)
                     if delta < min_delta:
@@ -178,8 +178,8 @@ class XICSExtractor:
                         closest_peak_idx = i
             
             if closest_peak_idx is not None:
-                peak_mz = ms2.peaks[closest_peak_idx, 0]
-                peak_intensity = ms2.peaks[closest_peak_idx, 1]
+                peak_mz = ms2.peaks[closest_peak_idx][0]
+                peak_intensity = ms2.peaks[closest_peak_idx][1]
                 
                 rt_values.append(ms2.retention_time)
                 intensity_values.append(peak_intensity)

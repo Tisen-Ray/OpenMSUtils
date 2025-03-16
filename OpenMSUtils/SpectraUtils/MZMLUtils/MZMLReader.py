@@ -73,17 +73,20 @@ class MZMLReader(object):
             
             # 创建线程池
             with concurrent.futures.ThreadPoolExecutor(max_workers=num_processes) as executor:
-                # 并行处理每个块
-                futures = [executor.submit(self._parse_spectra_chunk, filename, chunk, end_offset) for chunk in chunks]
+                # 使用map方法并行处理每个块
+                results = list(tqdm(
+                    executor.map(
+                        lambda chunk: self._parse_spectra_chunk(filename, chunk, end_offset),
+                        chunks
+                    ),
+                    total=len(chunks),
+                    desc="Processing chunks"
+                ))
                 
                 # 收集结果
                 all_spectra = []
-                for future in tqdm(futures, total=len(futures), desc="Processing chunks"):
-                    try:
-                        result = future.result()
-                        all_spectra.extend(result)
-                    except Exception as exc:
-                        print(f'处理块时发生错误: {exc}')
+                for result in results:
+                    all_spectra.extend(result)
                 
                 # 使用属性访问器设置spectra_list
                 if mzml_obj.run:
@@ -114,12 +117,19 @@ class MZMLReader(object):
                     # 创建线程池
                     with concurrent.futures.ThreadPoolExecutor(max_workers=num_processes) as executor:
                         # 并行处理每个块
-                        futures = [executor.submit(self._parse_spectrum_elems, chunk) for chunk in chunks]
+                        results = list(tqdm(
+                            executor.map(
+                                lambda chunk: self._parse_spectrum_elems(chunk),
+                                chunks
+                            ),
+                            total=len(chunks),
+                            desc="Processing spectrum elements"
+                        ))
                         
                         # 收集结果
                         all_spectra = []
-                        for future in tqdm(futures, total=len(futures), desc="Processing spectrum elements"):
-                            all_spectra.extend(future.result())
+                        for result in results:
+                            all_spectra.extend(result)
                         
                         # 使用属性访问器设置spectra_list
                         if mzml_obj.run:

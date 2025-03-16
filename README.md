@@ -19,14 +19,75 @@ pip install .
 ```
 
 ### Read MS file
-this package provides various classes for reading MS files, including MZML, MGF, MS1, MS2.
+This package provides various classes for reading MS files, including MZML, MGF, MS1, and MS2.
 
-Here is an example of reading MS file:
+Here is a detailed example of reading an MS file using `MZMLReader` and converting the spectra to `MSObject` using `SpectraConverter`:
+
+```python
+from OpenMSUtils.SpectraUtils import MZMLReader, SpectraConverter
+
+# Step 1: Initialize the MZMLReader
+reader = MZMLReader()
+
+# Step 2: Specify the path to your mzML file
+file_path = "path/to/your/test.mzML"
+
+# Step 3: Read the mzML file
+# You can choose to parse spectra in parallel for better performance
+mzml_obj = reader.read(file_path, parse_spectra=True, parallel=True)
+
+# Step 4: Access the spectra from the MZMLObject
+if mzml_obj.run and mzml_obj.run.spectra_list:
+    print(f"成功读取 {len(mzml_obj.run.spectra_list)} 个谱图")
+
+    # Step 5: Iterate through the spectra and convert them to MSObject
+    ms_objects = []
+    for spectrum in mzml_obj.run.spectra_list:
+        ms_obj = SpectraConverter.to_msobject(spectrum)
+        ms_objects.append(ms_obj)
+    print(f"转换成功: {spectrum.attrib.get('id', 'N/A')} -> MSObject")
+
+    # Step 6: Access properties of the MSObject
+    for ms_obj in ms_objects:
+    print(f"MS级别: {ms_obj.level}")
+    print(f"保留时间: {ms_obj.retention_time:.2f}秒")
+    print(f"峰值数量: {len(ms_obj.peaks)}")
+else:
+    print("未读取到谱图数据")
+```
+
+Here is an example of using MSObject
+```python
+from OpenMSUtils.SpectraUtils import MSObject, SpectraConverter
+
+ms_object = SpectraConverter.to_msobject(spectrum)
+
+# get peaks from ms_object
+peaks = ms_object.peaks
+
+# get precursor from ms_object
+precursor = ms_object.precursor
+
+# get scan_info from ms_object
+scan_info = ms_object.scan
+
+# get ms level from ms_object
+ms_level = ms_object.level
+
+# get additional_info from ms_object
+additional_info = ms_object.additional_info
+
+# get scan_number from ms_object
+scan_number = ms_object.scan_number
+
+# get retention_time from ms_object
+retention_time = ms_object.retention_time
+
+```
+
+Here is an example of reading MS file from mgf, ms1, ms2:
 ```python
 from OpenMSUtils.SpectraUtils import MZMLReader, MGFReader, MS1Reader, MS2Reader
-
-reader = MZMLReader()
-meta_data, spectrum = reader.read(file_path)
 
 reader = MGFReader()
 meta_data, spectrum = reader.read(file_path)
@@ -36,26 +97,6 @@ meta_data, spectrum = reader.read(file_path)
 
 reader = MS2Reader()
 meta_data, spectrum = reader.read(file_path)
-
-# get peaks from spectrum
-peaks = spectrum.peaks
-print(peaks)
-
-# get precursor from spectrum
-precursor = spectrum.precursor
-print(precursor)
-
-# get scan_info from spectrum
-scan_info = spectrum.scan_info
-print(scan_info)
-
-# get ms level from spectrum
-ms_level = spectrum.level
-print(ms_level)
-
-# get additional_info from spectrum
-additional_info = spectrum.additional_info
-print(additional_info)
 
 ```
 

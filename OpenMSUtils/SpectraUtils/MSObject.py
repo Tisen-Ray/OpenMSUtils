@@ -176,7 +176,6 @@ class MSObject:
     def set_scan_additional_info(self, key:str, value:any):
         self._scan.additional_info[key] = value
 
-
 if __name__ == "__main__":
     pass
 

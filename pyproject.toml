@@ -37,10 +37,6 @@ dependencies = [
     "matplotlib",
     "numpy",
     "pandas",
-    "difflib",
-    "re",
-    "typing",
-    "dataclasses"
 ]
 
 [tool.setuptools]

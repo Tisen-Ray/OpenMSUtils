@@ -36,7 +36,11 @@ dependencies = [
     "tqdm",
     "matplotlib",
     "numpy",
-    "pandas"
+    "pandas",
+    "difflib",
+    "re",
+    "typing",
+    "dataclasses"
 ]
 
 [tool.setuptools]

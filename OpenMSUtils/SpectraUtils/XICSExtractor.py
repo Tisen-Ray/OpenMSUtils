@@ -99,6 +99,18 @@ class XICSExtractor:
             
         return filtered_ms2
     
+    def _filter_ms2_by_rt(self, rt_start: float, rt_stop: float) -> List[MSObject]:
+        """根据保留时间筛选 MS2 谱图"""
+        filtered_ms2 = []
+        
+        for ms2 in self.ms2_objects:
+            if not (rt_start <= ms2.retention_time <= rt_stop):
+                continue
+            
+            filtered_ms2.append(ms2)
+            
+        return filtered_ms2
+
     def _extract_xic_from_ms1(self, mz: float, rt_start: float, rt_stop: float, ppm_tolerance: float) -> XICResult:
         """从 MS1 谱图中提取 XIC"""
         rt_values = []
@@ -151,7 +163,7 @@ class XICSExtractor:
             ppm_error=avg_ppm_error
         )
     
-    def _extract_xic_from_ms2(self, mz: float, precursor_mz: float, rt_start: float, rt_stop: float, ppm_tolerance: float) -> XICResult:
+    def _extract_xic_from_ms2(self, mz: float, precursor_mz: float, rt_start: float, rt_stop: float, ppm_tolerance: float, filtered_ms2: List[MSObject] = None) -> XICResult:
         """从 MS2 谱图中提取 XIC"""
         rt_values = []
         intensity_values = []
@@ -161,7 +173,8 @@ class XICSExtractor:
         mz_min = mz * (1 - ppm_tolerance / 1e6)
         mz_max = mz * (1 + ppm_tolerance / 1e6)
         
-        for ms2 in self._filter_ms2_by_precursor(precursor_mz):
+        ms2_list = filtered_ms2 if filtered_ms2 else self._filter_ms2_by_precursor(precursor_mz)
+        for ms2 in ms2_list:
             # 检查保留时间是否在范围内
             if not (rt_start <= ms2.retention_time <= rt_stop):
                 continue
@@ -233,11 +246,13 @@ class XICSExtractor:
             
         rt_start = peptide_info.rt_start
         rt_stop = peptide_info.rt_stop
+
+        filtered_ms2 = self._filter_ms2_by_rt(rt_start, rt_stop)
             
         # 提取每个碎片离子的 XIC
         xic_results = []
         for fragment in peptide_info.fragment_ions:
-            xic = self._extract_xic_from_ms2(fragment.mz, peptide_info.mz, rt_start, rt_stop, self.ppm_tolerance)
+            xic = self._extract_xic_from_ms2(fragment.mz, peptide_info.mz, rt_start, rt_stop, self.ppm_tolerance, filtered_ms2)
             xic.ion_type = fragment.ion_type
             xic.charge = fragment.charge
             xic_results.append(xic)

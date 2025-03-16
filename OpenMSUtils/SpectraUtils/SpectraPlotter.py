@@ -1,8 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from .MSObject import MSObject
+from typing import List, Optional
+from .XICSExtractor import XICResult, PolymerInfo
 
-class SpectrumPlotter:
+class SpectraPlotter:
     def __init__(self):
         pass
 
@@ -56,6 +58,52 @@ class SpectrumPlotter:
         plt.ylabel("Time")
         plt.title("Ion Mobility Spectrum")
         plt.show()
+    
+    def plot_xics(self, precursor_xics: List[XICResult], fragment_xics: List[XICResult], polymer_info: PolymerInfo, output_file: Optional[str] = None):
+        """绘制 XIC 图
+        
+        参数:
+            precursor_xics: 前体离子 XIC 结果列表
+            fragment_xics: 碎片离子 XIC 结果列表
+            peptide_info: 肽段信息
+            output_file: 输出文件路径，如果为 None 则显示图像
+        """
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+        
+        # 绘制前体离子 XIC
+        for xic in precursor_xics:
+            label = f"{xic.ion_type} (m/z: {xic.mz:.4f}, ppm: {xic.ppm_error:.2f})"
+            ax1.plot(xic.rt_array, xic.intensity_array, label=label)
+            
+        ax1.set_title(f"Precursor XIC: {polymer_info.modified_sequence} ({polymer_info.charge}+)")
+        ax1.set_ylabel("Intensity")
+        ax1.legend()
+        ax1.grid(True, linestyle='--', alpha=0.7)
+        
+        # 绘制碎片离子 XIC
+        for xic in fragment_xics:
+            label = f"{xic.ion_type} (m/z: {xic.mz:.4f}, ppm: {xic.ppm_error:.2f})"
+            ax2.plot(xic.rt_array, xic.intensity_array, label=label)
+            
+        ax2.set_title("Fragment XIC")
+        ax2.set_xlabel("Retention Time (min)")
+        ax2.set_ylabel("Intensity")
+        ax2.legend()
+        ax2.grid(True, linestyle='--', alpha=0.7)
+        
+        # 添加 RT 范围标记
+        for ax in [ax1, ax2]:
+            ax.axvline(x=polymer_info.rt_start, color='r', linestyle='--', alpha=0.5)
+            ax.axvline(x=polymer_info.rt_stop, color='r', linestyle='--', alpha=0.5)
+            ax.axvline(x=polymer_info.rt, color='g', linestyle='-', alpha=0.5)
+        
+        plt.tight_layout()
+        
+        if output_file:
+            plt.savefig(output_file, dpi=300)
+            print(f"图表已保存至: {output_file}")
+        else:
+            plt.show()
 
 if __name__ == "__main__":
     pass

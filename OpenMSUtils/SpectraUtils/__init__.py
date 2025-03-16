@@ -3,6 +3,6 @@ from .MZMLUtils import MZMLReader, MZMLWriter
 from .MGFReader import MGFReader
 from .MSObject import MSObject
 from .SpectraConverter import SpectraConverter
-from .SpectrumPlotter import SpectrumPlotter
+from .SpectraPlotter import SpectraPlotter
 from .IonMobilityUtils import IonMobilityUtils
-
+from .XICSExtractor import XICSExtractor, XICResult, FragmentIon, PolymerInfo

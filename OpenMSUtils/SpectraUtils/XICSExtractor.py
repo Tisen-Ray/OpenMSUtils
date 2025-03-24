@@ -2,6 +2,7 @@ import numpy as np
 from typing import List
 from dataclasses import dataclass
 from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor
 
 from .MZMLUtils import MZMLReader
 from .MSObject import MSObject
@@ -53,6 +54,7 @@ class XICSExtractor:
         self.ms_objects = []
         self.ms1_objects = []
         self.ms2_objects = []
+        self.ms2_objects_indices = {}
         
     def load_mzml(self):
         """加载 mzML 文件并转换为 MSObject 列表"""
@@ -64,16 +66,30 @@ class XICSExtractor:
             
         print("正在将谱图转换为 MSObject...")
         self.ms_objects = []
+        self.ms1_objects = []
+        self.ms2_objects = []
         for spectrum in tqdm(mzml_obj.run.spectra_list, desc="转换谱图"):
             ms_obj = SpectraConverter.to_msobject(spectrum)
-            self.ms_objects.append(ms_obj)
-            
             # 分类 MS1 和 MS2 谱图
+            self.ms_objects.append(ms_obj)
             if ms_obj.level == 1:
                 self.ms1_objects.append(ms_obj)
             elif ms_obj.level == 2:
                 self.ms2_objects.append(ms_obj)
         del mzml_obj
+
+        self.ms1_objects.sort(key=lambda x: x.retention_time)
+        self.ms2_objects.sort(key=lambda x: x.retention_time)
+
+        self.ms2_objects_indices = {}
+        for index, ms2 in enumerate(self.ms2_objects):
+            second = int(ms2.retention_time)  # 获取当前 MS2 谱图的保留时间的秒数
+            if second not in self.ms2_objects_indices:
+                self.ms2_objects_indices[second] = index
+            else:
+                if ms2.retention_time < self.ms2_objects[self.ms2_objects_indices[second]].retention_time:
+                    self.ms2_objects_indices[second] = index
+            
         print(f"共读取 {len(self.ms_objects)} 个谱图，其中 MS1: {len(self.ms1_objects)}，MS2: {len(self.ms2_objects)}")
         
     def _calculate_isotope_mzs(self, mz: float, charge: int, num_isotopes: int = 4) -> List[float]:
@@ -88,18 +104,38 @@ class XICSExtractor:
     def _filter_ms2_by_rt_and_precursor(self, rt_start: float, rt_stop: float, precursor_mz: float) -> List[MSObject]:
         """根据保留时间筛选 MS2 谱图"""
         filtered_ms2 = []
-        
-        for ms2 in self.ms2_objects:
+
+        start_second = int(rt_start)
+        while start_second not in self.ms2_objects_indices:
+            start_second -= 1
+        start_index = self.ms2_objects_indices[start_second]
+
+        for ms2 in self.ms2_objects[start_index:]:
             if not (rt_start <= ms2.retention_time <= rt_stop):
                 continue
 
+            if not (ms2.precursor.isolation_window[0] <= precursor_mz <= ms2.precursor.isolation_window[1]):
+                continue
+
+            if (ms2.retention_time > rt_stop):
+                break
+            
+            filtered_ms2.append(ms2)
+            
+        return filtered_ms2
+
+    def _filter_ms2_by_precursor(self, precursor_mz: float) -> List[MSObject]:
+        """根据前体离子质荷比筛选 MS2 谱图"""
+        filtered_ms2 = []
+        
+        for ms2 in self.ms2_objects:
             if not (ms2.precursor.isolation_window[0] <= precursor_mz <= ms2.precursor.isolation_window[1]):
                 continue
             
             filtered_ms2.append(ms2)
             
         return filtered_ms2
-
+    
     def _extract_xic_from_ms1(self, mz: float, rt_start: float, rt_stop: float, ppm_tolerance: float) -> XICResult:
         """从 MS1 谱图中提取 XIC"""
         rt_values = []
@@ -247,3 +283,4 @@ class XICSExtractor:
             xic_results.append(xic)
             
         return xic_results
+

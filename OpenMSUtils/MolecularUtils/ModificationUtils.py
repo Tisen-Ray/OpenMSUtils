@@ -23,7 +23,7 @@ class ModificationUtils():
     @staticmethod
     def parse_modified_sequence(modified_sequence: str) -> Tuple[str, Dict[int, str]]:
         """
-        解析带修饰标记的序列，例如 "PEP(Phospho)TIDE"
+        解析带修饰标记的序列，例如 "PEP(Phospho)TIDE" 或 "PEP(Phospho (P))TIDE"
         
         参数:
             modified_sequence: 带修饰标记的序列
@@ -31,33 +31,39 @@ class ModificationUtils():
         返回:
             原始序列和修饰信息
         """
-        # 匹配修饰模式，例如 "(Phospho)"
-        pattern = r'([A-Z])(\([^)]+\))'
-        
-        # 提取原始序列和修饰
         clean_sequence = ""
         modifications = {}
+        i = 0
         pos = 0
         
-        # 处理序列中的修饰
-        last_end = 0
-        for match in re.finditer(pattern, modified_sequence):
-            # 添加匹配前的部分到清洁序列
-            clean_sequence += modified_sequence[last_end:match.start()]
-            pos = len(clean_sequence)
+        while i < len(modified_sequence):
+            if i < len(modified_sequence) - 1 and modified_sequence[i+1] == '(':
+                # 找到一个氨基酸后面跟着修饰
+                aa = modified_sequence[i]
+                clean_sequence += aa
+                pos = len(clean_sequence) - 1
+                
+                # 找到完整的修饰（处理嵌套括号）
+                start = i + 2  # 跳过 '('
+                paren_count = 1
+                j = start
+                
+                while j < len(modified_sequence) and paren_count > 0:
+                    if modified_sequence[j] == '(':
+                        paren_count += 1
+                    elif modified_sequence[j] == ')':
+                        paren_count -= 1
+                    j += 1
+                
+                if paren_count == 0:
+                    mod = modified_sequence[start:j-1]  # 去除最外层括号
+                    modifications[pos] = mod
+                    i = j  # 更新索引到修饰后的位置
+                    continue
             
-            # 添加氨基酸
-            aa = match.group(1)
-            clean_sequence += aa
-            
-            # 记录修饰
-            mod = match.group(2)[1:-1]  # 去除括号
-            modifications[pos] = mod
-            
-            last_end = match.end()
-        
-        # 添加剩余部分
-        clean_sequence += modified_sequence[last_end:]
+            # 普通字符
+            clean_sequence += modified_sequence[i]
+            i += 1
         
         return clean_sequence, modifications
     

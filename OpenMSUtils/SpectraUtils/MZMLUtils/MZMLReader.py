@@ -3,7 +3,6 @@ import os
 import multiprocessing as mp
 from tqdm import tqdm
 from .MZMLObject import MZMLObject, Spectrum
-from ..SpectraConverter import SpectraConverter
 import concurrent.futures
 
 class MZMLReader(object):
@@ -167,6 +166,7 @@ class MZMLReader(object):
         Returns:
             list: MSObject对象列表
         """
+        from ..SpectraConverter import SpectraConverter
         # 先读取为MZMLObject
         mzml_obj = self.read(filename, parse_spectra=True, parallel=parallel, num_processes=num_processes)
         
@@ -279,25 +279,6 @@ class MZMLReader(object):
                         print(f"Error parsing spectrum at offset {offset_info['offset']}: {e}")
         
         return spectra
-
-    def _parse_spectrum_to_msobject(self, spectrum_str):
-        """
-        将XML格式的质谱数据解析为MSObject对象
-        Args:
-            spectrum_str: XML格式的质谱字符串
-        Returns:
-            MSObject: 包含质谱数据的MSObject对象
-        """
-        # 解析XML字符串
-        spectrum_elem = etree.fromstring(spectrum_str)
-        
-        # 创建Spectrum对象
-        spectrum = Spectrum(spectrum_elem)
-        
-        # 转换为MSObject
-        ms_obj = SpectraConverter.to_msobject(spectrum)
-        
-        return ms_obj
 
 if __name__ == "__main__":
     file_path = 'D:\\code\\Python\\MS\\NADataFormer\\rawData\\20181121a_HAP1_tRNA_19.mzML'

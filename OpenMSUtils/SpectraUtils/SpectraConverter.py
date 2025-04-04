@@ -4,13 +4,14 @@ import zlib
 from typing import Type, Any
 
 from .MSObject import MSObject
-from .MZMLUtils import Spectrum as MZMLSpectrum
-from .MZMLUtils import CVParam, BinaryDataArray
+from .MZMLUtils import Spectrum as MZMLSpectrum, BinaryDataArray, CVParam
+from .MGFUtils import MGFSpectrum
+from .MSFileUtils import MSSpectrum
 
 class SpectraConverter:
     """
     用于不同格式的质谱数据与MSObject之间的转换
-    支持多种格式的质谱数据，如mzML、MGF等
+    支持多种格式的质谱数据，如mzML、MGF、MS1/MS2等
     """
     
     @staticmethod
@@ -19,7 +20,7 @@ class SpectraConverter:
         将不同格式的质谱数据转换为MSObject
         
         Args:
-            spectrum: 质谱数据对象，可以是MZMLSpectrum或其他格式
+            spectrum: 质谱数据对象，可以是MZMLSpectrum、MGFSpectrum或MSSpectrum
             
         Returns:
             MSObject对象
@@ -29,9 +30,10 @@ class SpectraConverter:
         """
         if isinstance(spectrum, MZMLSpectrum):
             return SpectraConverter._mzml_to_msobject(spectrum)
-        # 未来可以添加其他格式的支持，例如:
-        # elif isinstance(spectrum, MGFSpectrum):
-        #     return SpectraConverter._mgf_to_msobject(spectrum)
+        elif isinstance(spectrum, MGFSpectrum):
+            return SpectraConverter._mgf_to_msobject(spectrum)
+        elif isinstance(spectrum, MSSpectrum):
+            return SpectraConverter._ms_to_msobject(spectrum)
         else:
             raise TypeError(f"Unsupported spectrum type: {type(spectrum).__name__}")
     
@@ -42,7 +44,7 @@ class SpectraConverter:
         
         Args:
             ms_object: MSObject对象
-            spectra_type: 目标质谱数据类型，如MZMLSpectrum
+            spectra_type: 目标质谱数据类型，如MZMLSpectrum、MGFSpectrum或MSSpectrum
             
         Returns:
             指定类型的质谱数据对象
@@ -52,9 +54,10 @@ class SpectraConverter:
         """
         if spectra_type == MZMLSpectrum:
             return SpectraConverter._msobject_to_mzml(ms_object)
-        # 未来可以添加其他格式的支持，例如:
-        # elif spectra_type == MGFSpectrum:
-        #     return SpectraConverter._msobject_to_mgf(ms_object)
+        elif spectra_type == MGFSpectrum:
+            return SpectraConverter._msobject_to_mgf(ms_object)
+        elif spectra_type == MSSpectrum:
+            return SpectraConverter._msobject_to_ms(ms_object)
         else:
             raise TypeError(f"Unsupported target spectrum type: {spectra_type.__name__}")
     
@@ -578,13 +581,159 @@ class SpectraConverter:
         
         return spectrum
     
-    # 未来可以添加其他格式的转换方法，例如:
-    # @staticmethod
-    # def _mgf_to_msobject(spectrum: MGFSpectrum) -> MSObject:
-    #     # MGF到MSObject的转换逻辑
-    #     pass
+    @staticmethod
+    def _mgf_to_msobject(spectrum: MGFSpectrum) -> MSObject:
+        """
+        将MGF的Spectrum对象转换为MSObject
+        
+        Args:
+            spectrum: MGFSpectrum对象
+            
+        Returns:
+            MSObject对象
+        """
+        # 创建MSObject
+        ms_object = MSObject()
+        
+        # 设置MS级别（MGF通常是MS2）
+        ms_object.set_level(2)
+        
+        # 设置scan信息
+        # MGF没有明确的scan number，使用0作为默认值
+        scan_number = 0
+        
+        # 从title中尝试提取scan number
+        if spectrum.title and "scan=" in spectrum.title.lower():
+            try:
+                scan_parts = spectrum.title.lower().split("scan=")[1].split()[0]
+                scan_number = int(scan_parts)
+            except (ValueError, IndexError):
+                pass
+        
+        ms_object.set_scan(scan_number=scan_number, retention_time=spectrum.rtinseconds)
+        
+        # 设置前体离子信息
+        ms_object.set_precursor(mz=spectrum.pepmass, charge=spectrum.charge)
+        
+        # 添加峰值
+        for mz, intensity in spectrum.peaks:
+            ms_object.add_peak(mz, intensity)
+        
+        # 添加额外信息
+        for key, value in spectrum.additional_info.items():
+            ms_object.set_additional_info(key, value)
+        
+        # 如果有title，添加为额外信息
+        if spectrum.title:
+            ms_object.set_additional_info("TITLE", spectrum.title)
+        
+        return ms_object
     
-    # @staticmethod
-    # def _msobject_to_mgf(ms_object: MSObject) -> MGFSpectrum:
-    #     # MSObject到MGF的转换逻辑
-    #     pass 
+    @staticmethod
+    def _msobject_to_mgf(ms_object: MSObject) -> MGFSpectrum:
+        """
+        将MSObject转换为MGF的Spectrum对象
+        
+        Args:
+            ms_object: MSObject对象
+            
+        Returns:
+            MGFSpectrum对象
+        """
+        # 创建MGFSpectrum
+        mgf_spectrum = MGFSpectrum()
+        
+        # 设置标题（使用scan number）
+        mgf_spectrum.title = f"Scan={ms_object.scan.scan_number}"
+        
+        # 设置肽质量（前体离子m/z）
+        if ms_object.precursor and ms_object.precursor.mz > 0:
+            mgf_spectrum.pepmass = ms_object.precursor.mz
+        
+        # 设置电荷
+        if ms_object.precursor and ms_object.precursor.charge != 0:
+            mgf_spectrum.charge = ms_object.precursor.charge
+        
+        # 设置保留时间
+        if ms_object.scan and ms_object.scan.retention_time > 0:
+            mgf_spectrum.rtinseconds = ms_object.scan.retention_time
+        
+        # 添加峰值
+        for mz, intensity in ms_object.peaks:
+            mgf_spectrum.add_peak(mz, intensity)
+        
+        # 添加额外信息
+        for key, value in ms_object.additional_info.items():
+            if key != "TITLE":  # 避免重复添加标题
+                mgf_spectrum.set_additional_info(key, value)
+        
+        return mgf_spectrum
+    
+    @staticmethod
+    def _ms_to_msobject(spectrum: MSSpectrum) -> MSObject:
+        """
+        将MS1/MS2的Spectrum对象转换为MSObject
+        
+        Args:
+            spectrum: MSSpectrum对象
+            
+        Returns:
+            MSObject对象
+        """
+        # 创建MSObject
+        ms_object = MSObject()
+        
+        # 设置MS级别
+        ms_object.set_level(spectrum.level)
+        
+        # 设置scan信息
+        ms_object.set_scan(scan_number=spectrum.scan_number, retention_time=spectrum.retention_time)
+        
+        # 设置前体离子信息（如果是MS2）
+        if spectrum.level == 2:
+            ms_object.set_precursor(mz=spectrum.precursor_mz, charge=spectrum.precursor_charge)
+        
+        # 添加峰值
+        for mz, intensity in spectrum.peaks:
+            ms_object.add_peak(mz, intensity)
+        
+        # 添加额外信息
+        for key, value in spectrum.additional_info.items():
+            ms_object.set_additional_info(key, value)
+        
+        return ms_object
+    
+    @staticmethod
+    def _msobject_to_ms(ms_object: MSObject) -> MSSpectrum:
+        """
+        将MSObject转换为MS1/MS2的Spectrum对象
+        
+        Args:
+            ms_object: MSObject对象
+            
+        Returns:
+            MSSpectrum对象
+        """
+        # 创建MSSpectrum
+        ms_spectrum = MSSpectrum(level=ms_object.level)
+        
+        # 设置扫描编号
+        ms_spectrum.scan_number = ms_object.scan.scan_number
+        
+        # 设置保留时间
+        ms_spectrum.retention_time = ms_object.scan.retention_time
+        
+        # 设置前体离子信息（如果是MS2）
+        if ms_object.level == 2 and ms_object.precursor:
+            ms_spectrum.precursor_mz = ms_object.precursor.mz
+            ms_spectrum.precursor_charge = ms_object.precursor.charge
+        
+        # 添加峰值
+        for mz, intensity in ms_object.peaks:
+            ms_spectrum.add_peak(mz, intensity)
+        
+        # 添加额外信息
+        for key, value in ms_object.additional_info.items():
+            ms_spectrum.set_additional_info(key, value)
+        
+        return ms_spectrum 

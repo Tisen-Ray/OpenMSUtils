@@ -2,7 +2,6 @@ from lxml import etree
 import os
 from tqdm import tqdm
 from .MZMLObject import MZMLObject, Spectrum, Run
-from ..SpectraConverter import SpectraConverter
 
 class MZMLWriter(object):
     def __init__(self):
@@ -119,18 +118,21 @@ class MZMLWriter(object):
         Returns:
             bool: 写入是否成功
         """
+        from ..SpectraConverter import SpectraConverter
         # 创建基本的MZMLObject
         mzml_obj = MZMLObject()
         
-        # 设置基本属性
         mzml_obj.nsmap = {
-            None: "http://psi.hupo.org/ms/mzml",
-            "xsi": "http://www.w3.org/2001/XMLSchema-instance"
+        None: "http://psi.hupo.org/ms/mzml",
+        "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "schemaLocation": "http://psi.hupo.org/ms/mzml http://psidev.info/files/ms/mzML/xsd/mzML1.1.0.xsd"
         }
         mzml_obj.attrib = {
-            "version": "1.1.0"
+            "version": "1.1.0",
+            "xmlns": "http://psi.hupo.org/ms/mzml",
+            "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+            "xsi:schemaLocation": "http://psi.hupo.org/ms/mzml http://psidev.info/files/ms/mzML/xsd/mzML1.1.0.xsd"
         }
-        
         # 添加元数据（如果提供）
         if metadata:
             if 'file_description' in metadata:

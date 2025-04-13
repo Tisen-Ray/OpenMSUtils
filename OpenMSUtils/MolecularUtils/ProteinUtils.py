@@ -33,6 +33,8 @@ class AminoAcid():
 
     @property
     def mass(self):
+        if self.character not in self.AA_formula:
+            raise ValueError(f"Invalid amino acid: {self.character}")
         formula = EnhancedFormula(self.AA_formula[self.character])
         return formula.isotope.mass
 
@@ -63,18 +65,8 @@ class Peptide():
         self._charge = charge
     
     def set_adduct(self, adduct: str):
-        if adduct == "@H+":
-            self._adduct_mass = -EnhancedFormula("H+").isotope.mass
-        elif adduct == "H+":
-            self._adduct_mass = EnhancedFormula("H+").isotope.mass
-        elif adduct == "Na+":
-            self._adduct_mass = EnhancedFormula("Na+").isotope.mass
-        elif adduct == "K+":
-            self._adduct_mass = EnhancedFormula("K+").isotope.mass
-        elif adduct == "NH4+":
-            self._adduct_mass = EnhancedFormula("NH4+").isotope.mass
-        else:
-            raise ValueError(f"Invalid adduct: {adduct}")
+        adduct_modification = Modification('adduct', adduct)
+        self._adduct_mass = adduct_modification.mass
     
     def set_fragments_type(self, fragments_type: list[str]):
         for fragment_type in fragments_type:
@@ -84,6 +76,7 @@ class Peptide():
 
     @property
     def mass(self):
+        self._check()
         total_mass = sum(AminoAcid(aa).mass for aa in self._sequence)
         for index, modification in self._modifications.items():
             total_mass += modification.mass
@@ -93,21 +86,17 @@ class Peptide():
 
     @property
     def mz(self):
-        if self._charge == 0:
+        self._check()
+        if self._charge == 0 or self._adduct_mass is None:
             return self.mass
         else:
-            if self._adduct_mass is None and self._charge < 0:
-                self._adduct_mass = -EnhancedFormula("H+").isotope.mass
-            elif self._adduct_mass is None and self._charge > 0:
-                self._adduct_mass = EnhancedFormula("H+").isotope.mass
             return (self.mass + self._adduct_mass) / self._charge
 
     @property
     def fragments(self):
+        self._check()
         adduct_mass = self._adduct_mass if self._adduct_mass is not None else EnhancedFormula("H+").isotope.mass
         charge = self._charge if self._charge is not None else 1
-        if not (adduct_mass < 0 and charge < 0) or (adduct_mass > 0 and charge > 0):
-            raise ValueError(f"Invalid adduct/charge combination: adduct={adduct_mass}, charge={charge}")
         fragments_type = self._fragments_type if self._fragments_type is not None else ["b", "y"]
         charge_sign = 1 if charge > 0 else -1
         max_fragment_charge = abs(charge)
@@ -161,7 +150,26 @@ class Peptide():
 
         return fragments
         
+    def _check(self):
+        if self._charge == 0:
+            print("Charge is 0, default to +1")
+            self._charge = 1
 
+        if self._adduct_mass is None:
+            print("Adduct is None, default to H+")
+            self._adduct_mass = EnhancedFormula("H+").isotope.mass
+
+        if self._fragments_type is None:
+            print("Fragments type is None, default to b,y")
+            self._fragments_type = ["b", "y"]
+        
+        if self._end_C_modification is None:
+            print("End C modification is None, default to None")
+            self._end_C_modification = None
+
+        if self._end_N_modification is None:
+            print("End N modification is None, default to None")
+            self._end_N_modification = None
 
 if __name__ == "__main__":
     from accurate_molmass import EnhancedFormula

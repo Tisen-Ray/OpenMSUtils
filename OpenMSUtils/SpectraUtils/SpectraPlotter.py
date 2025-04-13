@@ -15,8 +15,8 @@ class SpectraPlotter:
             print("No peaks found in the spectrum")
             return
         # 提取 mz 和 intensity 数据
-        mz_list = [peak.mz for peak in peaks]
-        intensity_list = [peak.intensity for peak in peaks]
+        mz_list = [peak[0] for peak in peaks]
+        intensity_list = [peak[1] for peak in peaks]
         max_intensity = max(intensity_list) if intensity_list else 1
         intensity_list = [intensity / max_intensity for intensity in intensity_list]
 

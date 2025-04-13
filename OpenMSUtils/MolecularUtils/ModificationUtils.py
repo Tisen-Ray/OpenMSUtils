@@ -1,7 +1,7 @@
 from .accurate_molmass import EnhancedFormula
 import os
 import pandas as pd
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List, Optional
 import re
 
 class Modification():
@@ -11,15 +11,55 @@ class Modification():
 
     @property
     def mass(self):
-        parts = self.formula.split('@')
-        if len(parts) == 1:
-            return EnhancedFormula(parts[0]).isotope.mass
-        elif len(parts) == 2 and parts[1]:  # Ensure there is something after '@'
-            return EnhancedFormula(parts[0]).isotope.mass - EnhancedFormula(parts[1]).isotope.mass
+        # 处理特殊的加合物表示法，如 [M+H+], [M+NH3] 等
+        adduct_pattern = r'\[M([\+\-].+)\]'
+        match = re.match(adduct_pattern, self.formula)
+        if match:
+            adduct = match.group(1)
+            if adduct.startswith('+'):
+                return EnhancedFormula(adduct[1:]).isotope.mass
+            elif adduct.startswith('-'):
+                return -EnhancedFormula(adduct[1:]).isotope.mass
+            else:
+                raise ValueError(f"Invalid adduct format: {self.formula}")
         else:
-            raise ValueError(f"Invalid formula: {self.formula}")
+            raise ValueError(f"Invalid adduct format: {self.formula}")
 
 class ModificationUtils():
+    @staticmethod
+    def parse_modification_file(file_path: str) -> pd.DataFrame:
+        """
+        加载修饰库文件
+        
+        参数:
+            file_path: 修饰库文件路径
+        """
+        if os.path.exists(file_path):
+            return pd.read_csv(file_path, sep='\t')
+        else:
+            raise FileNotFoundError(f"File {file_path} not found")
+    
+    @staticmethod
+    def find_modifications_by_mass(modifications: pd.DataFrame, mass: float, tolerance: float = 0.0001) -> List[Modification]:
+        """
+        根据质量搜索修饰
+        
+        参数:
+            mass: 修饰质量
+            tolerance: 质量容差
+            
+        返回:
+            符合条件的修饰列表
+        """
+        if modifications is None:
+            return []
+            
+        results = []
+        for modification in modifications:
+            if abs(modification['Isotopic Mass'] - mass) <= tolerance:
+                results.append(Modification(modification['Mod Name'], modification['Formula']))
+        return results
+    
     @staticmethod
     def parse_modified_sequence(modified_sequence: str) -> Tuple[str, Dict[int, str]]:
         """
@@ -87,20 +127,4 @@ class ModificationUtils():
                 
         return result
 
-class ProteinModificationRepository():
-    def __init__(self):
-        self.modifications = None
-    
-    def load(self, file_path: str):
-        if os.path.exists(file_path):
-            self.modifications = pd.read_csv(file_path, sep='\t').to_dict(orient='records')
-        else:
-            raise FileNotFoundError(f"File {file_path} not found")
-        
-    def find(self, mass: float, tolerance: float = 0.0001) -> list[Modification]:
-        results = []
-        for modification in self.modifications:
-            if abs(modification['Isotopic Mass'] - mass) <= tolerance:
-                results.append(Modification(modification['Mod Name'], modification['Formula']))
-        return None
 

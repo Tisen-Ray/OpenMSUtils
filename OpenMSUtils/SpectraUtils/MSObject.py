@@ -34,7 +34,7 @@ class Precursor(object):
     
     def set_isolation_window(self, window:tuple[float, float]):
         self.isolation_window = window
-    
+
 class Scan(object):
     def __init__(
             self, 
@@ -55,8 +55,8 @@ class Scan(object):
             self.scan_window = scan_window
 
         self.scan_number = scan_number
-        self.retention_time = retention_time
-        self.drift_time = drift_time
+        self.retention_time = retention_time # second
+        self.drift_time = drift_time # second
     
     def set_additional_info(self, key:str, value:any):
         self.additional_info[key] = value

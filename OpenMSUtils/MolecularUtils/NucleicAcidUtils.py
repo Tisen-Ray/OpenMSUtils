@@ -69,18 +69,8 @@ class Oligonucleotide():
         self._charge = charge
     
     def set_adduct(self, adduct: str):
-        if adduct == "@H+":
-            self._adduct_mass = -EnhancedFormula("H+").isotope.mass
-        elif adduct == "H+":
-            self._adduct_mass = EnhancedFormula("H+").isotope.mass
-        elif adduct == "Na+":
-            self._adduct_mass = EnhancedFormula("Na+").isotope.mass
-        elif adduct == "K+":
-            self._adduct_mass = EnhancedFormula("K+").isotope.mass
-        elif adduct == "NH4+":
-            self._adduct_mass = EnhancedFormula("NH4+").isotope.mass
-        else:
-            raise ValueError(f"Invalid adduct: {adduct}")
+        adduct_modification = Modification('adduct', adduct)
+        self._adduct_mass = adduct_modification.mass
     
     def set_fragments_type(self, fragments_type: list[str]):
         for fragment_type in fragments_type:
@@ -90,32 +80,28 @@ class Oligonucleotide():
     
     @property
     def mass(self):
-        mass = self._end_5_modification.mass if self._end_5_modification else 0.0
-        for i, nucleotide in enumerate(self._sequence):
-            mass += Nucleotide(nucleotide, self._deoxidation).mass
-            if i in self._modifications:
-                mass += self._modifications[i].mass
-        mass += self._end_3_modification.mass if self._end_3_modification else 0.0
-        return mass
+        self._check()
+        total_mass = sum((Nucleotide(nucleotide, self._deoxidation).mass for nucleotide in self._sequence))
+        for index, modification in self._modifications.items():
+            total_mass += modification.mass
+        total_mass += self._end_3_modification.mass if self._end_3_modification else 0.0
+        total_mass += self._end_5_modification.mass if self._end_5_modification else 0.0
+        return total_mass
 
     @property
     def mz(self):
-        if self._charge == 0:
+        self._check()
+        if self._charge == 0 or self._adduct_mass is None:
             return self.mass
         else:
-            if self._adduct_mass is None and self._charge < 0:
-                self._adduct_mass = -EnhancedFormula("H+").isotope.mass
-            elif self._adduct_mass is None and self._charge > 0:
-                self._adduct_mass = EnhancedFormula("H+").isotope.mass
-            return (self.mass + abs(self._charge) * self._adduct_mass)/ abs(self._charge)
-    
+            return (self.mass + self._adduct_mass) / self._charge
+
     @property
     def fragments(self):
+        self._check()
         adduct_mass = self._adduct_mass if self._adduct_mass is not None else -EnhancedFormula("H+").isotope.mass
         charge = self._charge if self._charge is not None else -1
-        if not (adduct_mass < 0 and charge < 0) or (adduct_mass > 0 and charge > 0):
-            raise ValueError(f"Invalid adduct/charge combination: adduct={adduct_mass}, charge={charge}")
-        fragments_type = self._fragments_type if self._fragments_type is not None else ["a", "b", "c", "d", "w", "x", "y", "z"]
+        fragments_type = self._fragments_type if self._fragments_type is not None else ["b", "c", "x", "y"]
         charge_sign = 1 if charge > 0 else -1
         max_fragment_charge = abs(charge)
 
@@ -171,6 +157,26 @@ class Oligonucleotide():
 
         return fragments
                 
+    def _check(self):
+        if self._charge == 0:
+            print("Charge is 0, default to -1")
+            self._charge = -1
+
+        if self._adduct_mass is None:
+            print("Adduct is None, default to -H+")
+            self._adduct_mass = -EnhancedFormula("H+").isotope.mass
+
+        if self._fragments_type is None:
+            print("Fragments type is None, default to b,c,x,y")
+            self._fragments_type = ["b", "c", "x", "y"]
+        
+        if self._end_C_modification is None:
+            print("End C modification is None, default to None")
+            self._end_C_modification = None
+
+        if self._end_N_modification is None:
+            print("End N modification is None, default to None")
+            self._end_N_modification = None
 
 if __name__ == "__main__":
     pass

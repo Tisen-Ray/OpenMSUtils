@@ -109,10 +109,20 @@ class SpectraConverter:
                     # 转换为秒
                     if unit == 'UO:0000031':  # minutes
                         retention_time = value * 60
+                    elif unit == 'UO:0000028':  # milliseconds
+                        retention_time = value / 1000
                     else:
                         retention_time = value
                 elif accession == 'MS:1002476':  # ion mobility drift time
-                    drift_time = float(cv_param.attrib.get('value', '0'))
+                    value = float(cv_param.attrib.get('value', '0'))
+                    unit = cv_param.attrib.get('unitAccession', '')
+                    # 转换为秒
+                    if unit == 'UO:0000031':  # minutes
+                        drift_time = value * 60
+                    elif unit == 'UO:0000028':  # milliseconds
+                        drift_time = value / 1000
+                    else:
+                        drift_time = value
             
             # 获取scan window
             if scan.scan_windows and len(scan.scan_windows) > 0:
@@ -309,7 +319,11 @@ class SpectraConverter:
                 'cvRef': 'MS',
                 'accession': 'MS:1002476',
                 'name': 'ion mobility drift time',
-                'value': str(ms_object.scan.drift_time)
+                'value': str(ms_object.scan.drift_time * 1000),  # 转换为毫秒
+                'unitCvRef': 'UO',
+                'unitAccession': 'UO:0000028',
+                'unitName': 'millisecond'
+
             }
             mzml_scan.add_cv_param(dt_param)
         

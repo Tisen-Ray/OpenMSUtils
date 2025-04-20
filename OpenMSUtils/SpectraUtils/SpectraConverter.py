@@ -251,7 +251,8 @@ class SpectraConverter:
                 ms_object.clear_peaks()  # 清除现有峰值
                 for mz, intensity in zip(mz_array, intensity_array):
                     ms_object.add_peak(mz, intensity)
-        
+                ms_object.sort_peaks()
+
         # 添加额外信息
         for cv_param in spectrum.cv_params:
             name = cv_param.attrib.get('name', '')
@@ -632,7 +633,8 @@ class SpectraConverter:
         # 添加峰值
         for mz, intensity in spectrum.peaks:
             ms_object.add_peak(mz, intensity)
-        
+        ms_object.sort_peaks() 
+
         # 添加额外信息
         for key, value in spectrum.additional_info.items():
             ms_object.set_additional_info(key, value)
@@ -710,7 +712,8 @@ class SpectraConverter:
         # 添加峰值
         for mz, intensity in spectrum.peaks:
             ms_object.add_peak(mz, intensity)
-        
+        ms_object.sort_peaks()
+
         # 添加额外信息
         for key, value in spectrum.additional_info.items():
             ms_object.set_additional_info(key, value)

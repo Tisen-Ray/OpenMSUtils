@@ -125,6 +125,9 @@ class MSObject:
     
     def clear_peaks(self):
         self._peaks = []
+    
+    def sort_peaks(self):
+        self._peaks.sort(key=lambda x: x[0])
 
     def set_additional_info(self, key:str, value:any):
         self._additional_info[key] = value

@@ -10,10 +10,11 @@ class ScanWindow(object):
             
         self._cv_params = []
         self._user_params = []
-        for param in etree_element.findall("cvParam"):
-            self._cv_params.append(CVParam(param))
-        for param in etree_element.findall("userParam"):
-            self._user_params.append(UserParam(param))
+        for child in etree_element:
+            if child.tag.endswith("cvParam"):
+                self._cv_params.append(CVParam(child))
+            elif child.tag.endswith("userParam"):
+                self._user_params.append(UserParam(child))
     
     def add_cv_param(self, cv_param:CVParam):
         self._cv_params.append(cv_param)
@@ -236,10 +237,11 @@ class IsolationWindow(object):
             
         self._cv_params = []
         self._user_params = []
-        for param in etree_element.findall("cvParam"):
-            self._cv_params.append(CVParam(param))
-        for param in etree_element.findall("userParam"):
-            self._user_params.append(UserParam(param))
+        for child in etree_element:
+            if child.tag.endswith("cvParam"):
+                self._cv_params.append(CVParam(child))
+            elif child.tag.endswith("userParam"):
+                self._user_params.append(UserParam(child))
     
     def add_cv_param(self, cv_param:CVParam):
         self._cv_params.append(cv_param)
@@ -288,10 +290,11 @@ class SelectedIon(object):
             
         self._cv_params = []
         self._user_params = []
-        for param in etree_element.findall("cvParam"):
-            self._cv_params.append(CVParam(param))
-        for param in etree_element.findall("userParam"):
-            self._user_params.append(UserParam(param))
+        for child in etree_element:
+            if child.tag.endswith("cvParam"):
+                self._cv_params.append(CVParam(child))
+            elif child.tag.endswith("userParam"):
+                self._user_params.append(UserParam(child))
     
     def add_cv_param(self, cv_param:CVParam):
         self._cv_params.append(cv_param)
@@ -340,10 +343,11 @@ class Activation(object):
             
         self._cv_params = []
         self._user_params = []
-        for param in etree_element.findall("cvParam"):
-            self._cv_params.append(CVParam(param))
-        for param in etree_element.findall("userParam"):
-            self._user_params.append(UserParam(param))
+        for child in etree_element:
+            if child.tag.endswith("cvParam"):
+                self._cv_params.append(CVParam(child))
+            elif child.tag.endswith("userParam"):
+                self._user_params.append(UserParam(child))
     
     def add_cv_param(self, cv_param:CVParam):
         self._cv_params.append(cv_param)

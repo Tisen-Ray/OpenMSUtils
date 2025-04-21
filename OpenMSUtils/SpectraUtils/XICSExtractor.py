@@ -106,9 +106,12 @@ class XICSExtractor:
         filtered_ms2 = []
 
         start_second = int(rt_start)
-        while start_second not in self.ms2_objects_indices:
+        while (start_second not in self.ms2_objects_indices) and start_second >= 0:
             start_second -= 1
-        start_index = self.ms2_objects_indices[start_second]
+        if start_second in self.ms2_objects_indices:
+            start_index = self.ms2_objects_indices[start_second]
+        else:
+            start_index = 0
 
         for ms2 in self.ms2_objects[start_index:]:
             if not (rt_start <= ms2.retention_time <= rt_stop):

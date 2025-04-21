@@ -5,3 +5,4 @@ from .XICSExtractor import XICSExtractor, XICResult, FragmentIon, PolymerInfo
 from .MZMLUtils import MZMLReader, MZMLWriter
 from .MGFUtils import MGFReader, MGFWriter
 from .MSFileUtils import MSFileReader, MSFileWriter
+from .SpectraSearchUtils import BinnedSpectra

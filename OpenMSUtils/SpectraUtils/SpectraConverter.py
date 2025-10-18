@@ -4,6 +4,7 @@ import zlib
 from typing import Type, Any
 
 from .MSObject import MSObject
+from .MSObject_Rust import MSObjectRust
 from .MZMLUtils import Spectrum as MZMLSpectrum, BinaryDataArray, CVParam
 from .MGFUtils import MGFSpectrum
 from .MSFileUtils import MSSpectrum
@@ -28,7 +29,10 @@ class SpectraConverter:
         Raises:
             TypeError: 如果输入的对象类型不受支持
         """
-        if isinstance(spectrum, MZMLSpectrum):
+        if isinstance(spectrum, MSObjectRust):
+            # MSObjectRust is already in the correct format, just return it
+            return spectrum
+        elif isinstance(spectrum, MZMLSpectrum):
             return SpectraConverter._mzml_to_msobject(spectrum)
         elif isinstance(spectrum, MGFSpectrum):
             return SpectraConverter._mgf_to_msobject(spectrum)

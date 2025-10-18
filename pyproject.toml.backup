@@ -1,0 +1,56 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "openms-utils-rust"
+description = "Rust implementation of OpenMSUtils Spectra module for high performance mass spectrometry data processing"
+readme = "README.md"
+keywords = [
+    "mass-spectrometry",
+    "mzml",
+    "bioinformatics",
+    "performance",
+    "rust",
+]
+license = {text = "MIT License"}
+maintainers = [
+    {name = "OpenMSUtils Team", email = "ycliao@zju.edu.cn"},
+]
+authors = [
+    {name = "OpenMSUtils Team", email = "ycliao@zju.edu.cn"},
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+dependencies = [
+    "numpy",
+    "lxml",
+    "matplotlib",
+]
+dynamic = ["version"]
+
+[tool.maturin]
+python-source = "python"
+module-name = "openms_utils_rust._core"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+line_length = 120
+profile = "black"
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --cov"
+testpaths = ["tests", "python/tests"]

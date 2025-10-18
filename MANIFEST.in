@@ -1,0 +1,26 @@
+include README.md
+include LICENSE
+include CLAUDE.md
+include INTEGRATION_SUCCESS_REPORT.md
+include REAL_MZML_TEST_REPORT.md
+include MANIFEST.in
+include Cargo.toml
+include pyproject.toml
+include setup.py
+recursive-include src *.rs
+recursive-include OpenMSUtils *.py
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .DS_Store
+# Include precompiled wheels for distribution
+include dist/*.whl
+
+# Exclude build artifacts and development files
+global-exclude target
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude Cargo.lock
+global-exclude *.pdb
+global-exclude *.exp
+global-exclude *.lib

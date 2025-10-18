@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo check:*)",
+      "Bash(maturin build:*)",
+      "Bash(uv venv:*)",
+      "Bash(uv run python:*)",
+      "Bash(uv run maturin develop:*)",
+      "Bash(python:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

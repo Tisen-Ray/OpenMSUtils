@@ -1,0 +1,44 @@
+[package]
+name = "openms-utils-rust"
+version = "0.1.0"
+edition = "2021"
+description = "Rust implementation of OpenMSUtils Spectra module"
+authors = ["OpenMSUtils Team"]
+license = "MIT"
+
+[lib]
+name = "openms_utils_rust"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# PyO3 for Python bindings
+pyo3 = { version = "0.23.0", features = ["extension-module"], optional = true }
+
+# Error handling
+thiserror = "2.0.17"
+
+# Performance and parallelism
+rayon = "1.8.0"
+num_cpus = "1.16.0"
+
+# Small collections for performance
+smallvec = "1.11.0"
+
+# Serialization
+serde = { version = "1.0.228", features = ["derive"] }
+
+# XML parsing
+quick-xml = "0.38.3"
+
+# Compression and encoding
+flate2 = "1.1.4"
+base64 = "0.22.1"
+
+# Optional dependencies for testing
+[dev-dependencies]
+tempfile = "3.23.0"
+
+# Features
+[features]
+default = ["python"]
+python = ["pyo3"]
